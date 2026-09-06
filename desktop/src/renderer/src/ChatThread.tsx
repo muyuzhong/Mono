@@ -77,6 +77,9 @@ function MessageActions() {
 
 const messageComponents = { UserMessage, AssistantMessage };
 
+import { ConversationLocator } from "./components/ConversationLocator";
+import { TrajectoryTimeline } from "./components/TrajectoryTimeline";
+
 export function ChatThread({ sidebarCollapsed, onToggleSidebar, onCreateSession, onOpenSearch, onOpenSettings, skills, skillPrompt }: {
   sidebarCollapsed: boolean;
   onToggleSidebar: () => void;
@@ -88,11 +91,17 @@ export function ChatThread({ sidebarCollapsed, onToggleSidebar, onCreateSession,
 }) {
   const { adapter, snapshot } = useLionRuntime();
   const [queuedText, setQueuedText] = useState("");
+  const [activeView, setActiveView] = useState<"chat" | "trajectory">("chat");
   const composer = unstable_useComposerInput();
   const { protocol } = snapshot;
   const queueCount = protocol.queue.steering.length + protocol.queue.followUp.length;
   const activeSession = snapshot.sessions.find((session) => session.id === snapshot.status?.session_id);
   const sessionTitle = activeSession?.label || snapshot.status?.session_id?.slice(0, 18) || "新建任务";
+
+  const totalToolCalls = protocol.messages.reduce(
+    (acc, m) => acc + (m.tools?.length ?? 0),
+    0
+  );
 
   useEffect(() => {
     if (!skillPrompt) return;
@@ -108,26 +117,46 @@ export function ChatThread({ sidebarCollapsed, onToggleSidebar, onCreateSession,
   };
 
   return (
-    <main id="lion-thread" className="chat-shell" role="region" aria-label="Lion 聊天" data-message-count={protocol.messages.length}>
+    <main id="lion-thread" className="chat-shell" role="region" aria-label="Lion 聊天" data-message-count={protocol.messages.length} data-active-view={activeView}>
       <ConversationTopbar
         title={sessionTitle}
         transportStatus={snapshot.transportStatus}
         transportLabel={transportLabel(snapshot.transportStatus)}
         sidebarCollapsed={sidebarCollapsed}
+        activeView={activeView}
+        toolCallCount={totalToolCalls}
         onToggleSidebar={onToggleSidebar}
         onCreateSession={onCreateSession}
         onOpenSearch={onOpenSearch}
+        onViewChange={setActiveView}
       />
       <div className="chat-notices">
         {snapshot.transportError ? <p className="transport-error" role="alert">{snapshot.transportError}</p> : null}
         {snapshot.metadataError ? <p className="transport-error" role="alert">工作区信息未同步：{snapshot.metadataError}</p> : null}
       </div>
       <ThreadPrimitive.Root className="thread-root">
+        {activeView === "chat" ? (
+          <ConversationLocator messages={protocol.messages} />
+        ) : null}
         <ThreadPrimitive.Viewport className="thread-viewport">
-          <ThreadPrimitive.Empty>
-            <div className="empty-thread"><h2>准备好开始工作</h2><p>在下方输入任务，或从左侧选择已有会话。</p></div>
-          </ThreadPrimitive.Empty>
-          <div className="thread-content"><ThreadPrimitive.Messages components={messageComponents} /></div>
+          {activeView === "chat" ? (
+            <>
+              <ThreadPrimitive.Empty>
+                <div className="empty-thread"><h2>准备好开始工作</h2><p>在下方输入任务，或从左侧选择已有会话。</p></div>
+              </ThreadPrimitive.Empty>
+              <div className="thread-content"><ThreadPrimitive.Messages components={messageComponents} /></div>
+            </>
+          ) : (
+            <div className="thread-content trajectory-view-content">
+              <TrajectoryTimeline
+                messages={protocol.messages}
+                metrics={protocol.metrics}
+                inputTokens={snapshot.status?.input_tokens}
+                outputTokens={snapshot.status?.output_tokens}
+                cacheHitRate={snapshot.status?.cache_hit_rate}
+              />
+            </div>
+          )}
           <ThreadPrimitive.ViewportFooter className="composer-dock">
             <div className="composer-stack">
               <ComposerChrome

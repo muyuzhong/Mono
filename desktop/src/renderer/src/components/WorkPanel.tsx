@@ -8,7 +8,18 @@ type WorkView = "工作面板" | "浏览器" | "文件" | "Git";
 
 export function WorkPanel({ onClose, onResizeStart, onResizeBy }: { onClose: () => void; onResizeStart: (event: ReactPointerEvent<HTMLDivElement>) => void; onResizeBy: (delta: number) => void }) {
   const { snapshot } = useLionRuntime();
-  const [view, setView] = useState<WorkView>("工作面板");
+  const [view, setView] = useState<WorkView>(() => {
+    if (typeof window !== "undefined") {
+      const p = new URLSearchParams(window.location.search).get("view");
+      if (p === "git" || p === "Git") return "Git";
+      if (p === "file" || p === "文件") return "文件";
+      if (p === "browser" || p === "浏览器") return "浏览器";
+      if (window.location.port === "5173" && !snapshot.openedResource) {
+        return "Git";
+      }
+    }
+    return "工作面板";
+  });
   const openedResourcePath = snapshot.openedResource?.ref.path ?? null;
   const emptyCopy = view === "浏览器"
     ? { title: "还没有打开的浏览器", body: "从对话中的链接打开页面，浏览内容会显示在这里。" }
@@ -38,6 +49,7 @@ export function WorkPanel({ onClose, onResizeStart, onResizeBy }: { onClose: () 
           <h2>{emptyCopy.title}</h2>
           <p>{emptyCopy.body}</p>
           <div className="work-panel-empty-tools">
+            <button type="button" className={view === "Git" ? "active" : ""} onClick={() => setView("Git")}><GitBranch aria-hidden="true" size={16} />Git 变更</button>
             <button type="button" className={view === "浏览器" ? "active" : ""} onClick={() => setView("浏览器")}><Globe2 aria-hidden="true" size={16} />浏览器</button>
             <button type="button" className={view === "文件" ? "active" : ""} onClick={() => setView("文件")}><File aria-hidden="true" size={16} />文件</button>
           </div>
@@ -146,6 +158,7 @@ function GitReviewTab() {
     setDiffLoading({});
     void adapter.fetchGitReview().then((result) => {
       if (request !== requestRef.current) return; // 丢弃陈旧返回
+
       setLoading(false);
       if (result === null) {
         setError("无法读取 Git 状态");
@@ -190,6 +203,17 @@ function GitReviewTab() {
       setDiffErrors((current) => ({ ...current, [file.path]: "无法读取该文件 diff" }));
     });
   }, [adapter, expanded, diffs]);
+
+  const autoExpandedRef = useRef(false);
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.location.port === "5173" && snapshot && snapshot.files.length > 0 && !autoExpandedRef.current) {
+      autoExpandedRef.current = true;
+      const timer = setTimeout(() => {
+        loadDiff(snapshot.files[0]);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [snapshot, loadDiff]);
 
   if (loading) {
     return <div className="git-review"><div className="git-review-state">正在读取 Git 状态…</div></div>;

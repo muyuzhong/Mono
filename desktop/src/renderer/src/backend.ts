@@ -36,6 +36,9 @@ export interface ServerStatus {
   available_thinking_levels: string[];
   input_tokens: number;
   output_tokens: number;
+  cache_read_tokens?: number;
+  cache_write_tokens?: number;
+  cache_hit_rate?: number;
   is_running: boolean;
 }
 
@@ -352,6 +355,9 @@ function isServerStatus(value: unknown): value is ServerStatus {
     && value.available_thinking_levels.every((level) => typeof level === "string")
     && typeof value.input_tokens === "number"
     && typeof value.output_tokens === "number"
+    && (value.cache_read_tokens === undefined || typeof value.cache_read_tokens === "number")
+    && (value.cache_write_tokens === undefined || typeof value.cache_write_tokens === "number")
+    && (value.cache_hit_rate === undefined || typeof value.cache_hit_rate === "number")
     && typeof value.is_running === "boolean";
 }
 

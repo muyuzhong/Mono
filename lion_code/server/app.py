@@ -203,6 +203,9 @@ def create_app(
     async def get_status() -> ServerStatusResponse:
         usage = session.token_usage()
         readiness = session.provider_readiness
+        cached = usage.cache_read_tokens
+        billed_input = usage.input_tokens + usage.cache_write_tokens + cached
+        hit_rate = round((cached / billed_input) * 100, 1) if billed_input > 0 else 0.0
         return ServerStatusResponse(
             session_id=session.session_id,
             model=session.model,
@@ -215,6 +218,9 @@ def create_app(
             available_thinking_levels=list(session.available_thinking_levels),
             input_tokens=usage.input_tokens,
             output_tokens=usage.output_tokens,
+            cache_read_tokens=usage.cache_read_tokens,
+            cache_write_tokens=usage.cache_write_tokens,
+            cache_hit_rate=hit_rate,
             is_running=session.is_running,
         )
 
