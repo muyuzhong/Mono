@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { isOpenableResourceResponse, LionRestClient, type BackendBootstrap, type WebSocketPort } from "../../src/renderer/src/backend";
+import { isOpenableResourceResponse, LionRestClient, LionWebSocketTransport, type BackendBootstrap, type WebSocketPort } from "../../src/renderer/src/backend";
 import { projectLionMessage } from "../../src/renderer/src/assistantRuntime";
 import { LionAssistantRuntimeAdapter } from "../../src/renderer/src/lionRuntime";
 
@@ -48,6 +48,39 @@ function harness(history: unknown[] = [], options: { apiConfigured?: boolean; bl
 }
 
 describe("Lion assistant runtime adapter", () => {
+  it.each([
+    JSON.stringify({ type: "notice", role: "info", text: "😀".repeat(65_537) }),
+    " ".repeat(1_048_577),
+    new Uint8Array([1, 2]),
+  ])("closes rejected inbound frames and ignores subsequent queued events", (data) => {
+    const h = harness();
+    const listener = vi.fn();
+    const transport = new LionWebSocketTransport(h.bootstrap, listener);
+    transport.connect();
+    const socket = h.sockets[0];
+    socket.open();
+    listener.mockClear();
+    socket.onmessage?.({ data });
+    socket.receive({ type: "agent_start" });
+    expect(listener.mock.calls.map(([event]) => event.type)).toEqual(["protocol_error", "disconnected"]);
+    expect(socket.readyState).toBe(3);
+  });
+
+  it("rejects oversized outgoing text without sending and allows a fresh connection", () => {
+    const h = harness();
+    const listener = vi.fn();
+    const transport = new LionWebSocketTransport(h.bootstrap, listener);
+    transport.connect();
+    h.sockets[0].open();
+    expect(transport.send({ action: "prompt", prompt: "😀".repeat(65_537) })).toBe(false);
+    expect(h.sockets[0].sent).toEqual([]);
+    expect(listener).toHaveBeenCalledWith(expect.objectContaining({ type: "protocol_error" }));
+    expect(h.sockets[0].readyState).toBe(3);
+    transport.connect();
+    h.sockets[1].open();
+    expect(transport.send({ action: "cancel" })).toBe(true);
+    expect(h.sockets[1].sent).toEqual(['{"action":"cancel"}']);
+  });
   it("projects text, reasoning and tools to assistant-ui parts", () => {
     const projected = projectLionMessage({ id: "a1", role: "assistant", content: "answer", reasoning: "thought", tools: [{ id: "t1", toolName: "read", args: { path: "a" }, status: "error", result: "bad" }], error: "failed" });
     expect(projected.id).toBe("a1");

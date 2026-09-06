@@ -6,6 +6,9 @@ import json
 
 from .types import LionTool, ToolCapabilities, ToolCommand, ToolResult
 
+TOOL_SEARCH_MAX_RESULTS = 8
+TOOL_SEARCH_SCHEMA_CHAR_BUDGET = 24_000
+
 
 def create_agent_tool(command: ToolCommand) -> LionTool:
     async def execute(context, tool_call_id, arguments, on_update):
@@ -107,7 +110,12 @@ def create_exit_plan_tool(command: ToolCommand) -> LionTool:
 def create_tool_search_tool() -> LionTool:
     async def execute(context, tool_call_id, arguments, on_update):
         del tool_call_id, on_update
-        query = str(arguments.get("query", ""))
+        query = arguments.get("query")
+        if not isinstance(query, str) or not query.strip():
+            return ToolResult(
+                content="query must be a non-empty string.", is_error=True
+            )
+        query = query.strip().casefold()
         matches = [
             tool
             for tool in context.registry.search(query)
@@ -116,20 +124,60 @@ def create_tool_search_tool() -> LionTool:
         if not matches:
             return ToolResult(content="No matching deferred tools found.")
 
+        matches.sort(
+            key=lambda tool: (
+                tool.name.casefold() != query,
+                not tool.name.casefold().startswith(query),
+                query not in tool.name.casefold(),
+                tool.name.casefold(),
+                tool.name,
+            )
+        )
         activated: list[str] = []
-        for tool in matches:
-            context.registry.activate(tool.name)
+        schemas: list[dict] = []
+        blocked: list[dict[str, str | bool]] = []
+        schema_chars = 2  # JSON 数组括号与分隔符也计入预算，不截断 schema。
+        for tool in matches[:TOOL_SEARCH_MAX_RESULTS]:
+            schema = tool.to_anthropic_schema()
+            size = len(json.dumps(schema, ensure_ascii=False))
+            added_chars = size + (2 if schemas else 0)
+            reason = None
+            if size + 2 > TOOL_SEARCH_SCHEMA_CHAR_BUDGET:
+                reason = "schema_too_large"
+            elif schema_chars + added_chars > TOOL_SEARCH_SCHEMA_CHAR_BUDGET:
+                reason = "schema_budget_exhausted"
+            if reason is not None:
+                blocked.append(
+                    {
+                        "name": tool.name,
+                        "reason": reason,
+                        "active": context.registry.is_active(tool.name),
+                    }
+                )
+                continue
+            schemas.append(schema)
+            schema_chars += added_chars
             activated.append(tool.name)
 
-        schemas = [tool.to_anthropic_schema() for tool in matches]
+        # 全部候选序列化成功后才激活，避免失败结果留下半次激活。
+        content = json.dumps(
+            {
+                "tools": schemas,
+                "blocked": blocked,
+                "omitted_count": max(0, len(matches) - TOOL_SEARCH_MAX_RESULTS),
+            },
+            ensure_ascii=False,
+        )
+        for name in activated:
+            context.registry.activate(name)
         return ToolResult(
-            content=json.dumps(schemas, ensure_ascii=False, indent=2),
+            content=content,
             activated_tools=activated,
         )
 
     return LionTool(
         name="tool_search",
-        description="Search for available tools by name or keyword. Returns full schema definitions for matching deferred tools so you can use them.",
+        description="Search deferred tools by name or keyword. Examines at most 8 matches, ranked by exact name, prefix, name substring, then description. Returns and activates full schemas within a 24000-character schema budget; blocked entries explain omissions. Narrow the query when omitted_count is nonzero. Existing active tools remain active.",
         parameters={
             "type": "object",
             "properties": {

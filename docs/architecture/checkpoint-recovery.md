@@ -55,6 +55,21 @@
 | **可重试故障 (Retryable Failure)** | 若 `last_stop_reason` 命中 `RetryPolicy`（如 `timeout`, `model_error`）且未超上限：写入 `phase="retry_wait", next_run_at=now+delay`。 | 会话历史保留故障前的完整上下文。 | 调度器等待退避时间后，启动下一次 attempt 重新进入执行。 |
 | **不可重试故障 (Fatal Failure)** | 若未命中策略（如代码逻辑错误、预算超额、达到最大尝试次数）：写入 `phase="failed", status="failed"`。 | 会话历史保留故障诊断信息。 | 终态不可恢复；终止调度。 |
 
+## 只读会话诊断
+
+在会话原工作区运行 `lion-code --inspect-session <ID>`；加 `--json` 输出版本化摘要。
+CLI 经 Application 查询调用 `SessionRepository.inspect`，在凭证解析之前返回，不创建 Agent、调用 Provider、恢复会话或修改历史文件。
+
+诊断只接受由字母、数字、下划线和连字符组成的 1–128 字符 ID。现有仓库目录属于主机范围；诊断额外校验首条会话元数据的绝对 cwd 与当前工作区一致，其他工作区返回 `missing`。没有有效元数据时报告 `workspace_unavailable`；空文件或损坏文件的状态不能证明工作区归属。拒绝非普通文件和指向仓库目录外的符号链接，不进行旧文件迁移。
+
+读取上限为 8 MiB，每行上限 1 MiB，最多检查 10,000 个物理行。最多返回 100 条诊断，其余计入 `diagnostics_omitted`。通过读取前后的文件信息识别变化；这不是文件锁，也不保证读取完成后文件保持不变。`snapshot_id` 是本次取得内容的 SHA-256。
+
+复用 JSONL 标准解码器，按原始消息顺序检查工具配对，不使用压缩后的上下文替代原始记录。结果只与此前尚未配对的同 ID 调用匹配；重复 ID、孤立结果和缺失结果分别报告。未完成尾行仅统计忽略字节数，不解码或修复；中部损坏停止在有效前缀。输出包含计数、行号及哈希化工具引用，不包含工具名称、参数、消息正文或原始异常。
+
+`read_state` 区分 `missing`、`empty`、`readable`、`invalid`、`unreadable`、`changed` 和 `limit_exceeded`；`coverage` 表示读取覆盖率。完整读取不代表工具配对正确或业务运行成功。`last_assistant_stop_reason` 仅为最后一条 assistant 消息的停止原因；现有历史无法证明完整 operation 终态，因此 `run_status=unknown`、`run_coverage=unavailable`。
+
+退出码：无读取或配对问题时为 0（包括空文件，`status_incomplete` 提示不单独导致失败）；不可读取、部分读取或配对异常为 1；非法参数为 2。退出码 0 不代表历史任务成功。
+
 ## 当前代码事实与未实现项说明
 
 * **原子替换而非多写并发互斥**：`JsonCheckpointStore` 使用临时文件配合 `os.replace()` 实现单个文件写入的原子替换（读取者不会读到半写入的脏数据），但系统**未实现文件锁或多写互斥锁**；若多个进程同时写入同一个 `goal_id`，后写入者将直接覆盖先写入者（Lost Update）。

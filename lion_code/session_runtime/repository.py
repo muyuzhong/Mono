@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+import re
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -12,6 +14,7 @@ from lion_code.core.session import (
     SessionJsonlError,
     SessionState,
 )
+from lion_code.session_runtime.inspection import SessionInspection, inspect_history
 
 SESSION_DIR = Path.home() / ".lion-code" / "sessions"
 
@@ -33,6 +36,20 @@ class SessionRepository:
         if not entries:
             return None
         return SessionState.from_entries(entries)
+
+    async def inspect(self, session_id: str, *, cwd: Path) -> SessionInspection:
+        """有界检查当前工作区历史；不恢复会话，不更改文件；非法 ID 抛 ValueError。"""
+        if not re.fullmatch(r"[A-Za-z0-9_-]{1,128}", session_id):
+            raise ValueError("Invalid session id")
+        path = self.storage_for(session_id).path
+        try:
+            if path.resolve().parent != self.session_dir.resolve():
+                return SessionInspection(session_id, "missing")
+        except (OSError, RuntimeError):
+            return SessionInspection(session_id, "unreadable")
+        return await asyncio.to_thread(
+            inspect_history, path, session_id=session_id, cwd=cwd
+        )
 
     async def list_sessions(self) -> list[dict[str, Any]]:
         if not self.session_dir.exists():

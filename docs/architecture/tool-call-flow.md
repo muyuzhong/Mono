@@ -83,3 +83,18 @@ Next Agent Turn (模型接收 ToolResultMessage 作为上下文继续决策)
 
 1. **Kernel 零感知策略**：Core 中的 `run_agent_loop` 和 `AgentHarness` 不感知权限、快照、审计、脱敏、工作区或文件新鲜度。Core 仅通过 `AgentTool.execute(call_id, args, signal, on_update)` 调用统一抽象。
 2. **动态工具可见性**：Harness 在每一轮次开始时通过 `get_tools` 动态拉取当前激活的工具列表。当工具返回 `added_tool_names`（如 `tool_search` 激活了延迟工具）时，下一轮请求将即刻对模型可见，无需重启或重建 Agent 图。
+
+## 延迟工具发现预算
+
+`tool_search` 要求非空字符串 query，仍按名称或描述做不区分大小写的子串匹配。
+候选依次按名称精确匹配、名称前缀、名称子串、描述匹配排序；同级按名称排序，
+不依赖注册顺序。每次只处理前 8 个候选，其余以 `omitted_count` 提示缩小查询。
+
+结果正文为 `{tools, blocked, omitted_count}`。`tools` 是本次成功返回并激活的完整
+Anthropic schema；以 `ensure_ascii=False`、默认 JSON 分隔符序列化的 schema 数组
+最多 24,000 个字符（含括号与分隔符，不含诊断包装）。不能装入预算的候选返回
+`schema_too_large` 或 `schema_budget_exhausted`，并报告当前 `active` 状态。
+后续较小候选仍可装入；schema 不截断，未返回的工具不新增激活。
+
+预算属于单次发现调用，不是全会话 Provider schema 总预算。重复查询不撤销已有激活，
+已激活工具仍可查询完整 schema；激活不授予执行权限，也不绕过 ToolRuntime 中间件。

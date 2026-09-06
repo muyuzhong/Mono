@@ -1,0 +1,14 @@
+[
+  {"name":"text_at_limit","prefix":"{\"text\":\"","repeat":"a","count":262144,"suffix":"\"}","accepted":true},
+  {"name":"text_over_limit","prefix":"{\"text\":\"","repeat":"a","count":262145,"suffix":"\"}","accepted":false},
+  {"name":"unicode_at_limit","prefix":"{\"thinking\":\"","repeat":"😀","count":65536,"suffix":"\"}","accepted":true},
+  {"name":"unicode_over_limit","prefix":"{\"result\":\"","repeat":"😀","count":65537,"suffix":"\"}","accepted":false},
+  {"name":"escaped_unicode_over_limit","prefix":"{\"result\":\"","repeat":"\\u4e2d","count":87382,"suffix":"\"}","accepted":false},
+  {"name":"array_at_limit","prefix":"[0","repeat":",0","count":4095,"suffix":"]","accepted":true},
+  {"name":"array_over_limit","prefix":"[0","repeat":",0","count":4096,"suffix":"]","accepted":false},
+  {"name":"depth_at_limit","prefix":"","repeat":"[","count":32,"suffix":"0","closing":"]","accepted":true},
+  {"name":"depth_over_limit","prefix":"","repeat":"[","count":33,"suffix":"0","closing":"]","accepted":false},
+  {"name":"frame_at_limit","prefix":"{}","repeat":" ","count":1048574,"suffix":"","accepted":true},
+  {"name":"frame_over_limit","prefix":"{}","repeat":" ","count":1048575,"suffix":"","accepted":false},
+  {"name":"invalid_surrogate","prefix":"\"\\ud800\"","repeat":"","count":0,"suffix":"","accepted":false}
+]
