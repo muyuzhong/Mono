@@ -22,9 +22,8 @@ function Workspace({ workspacePath }: { workspacePath: string }) {
       const p = new URLSearchParams(window.location.search).get("panel");
       if (p === "false" || p === "0" || p === "closed") return false;
       if (p === "true" || p === "1" || p === "open") return true;
-      if (window.location.port === "5173") return true;
     }
-    return false;
+    return true;
   });
   const [sessionSearchOpen, setSessionSearchOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);

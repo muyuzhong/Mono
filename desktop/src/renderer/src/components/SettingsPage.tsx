@@ -36,7 +36,7 @@ export function SettingsPage({
     .filter((item) => item.length > 0).length;
 
   const TAB_META = {
-    provider: { kicker: "系统设置 · 模型与协议", title: "AI Provider 与模型配置" },
+    provider: { kicker: "系统设置 · 模型与协议", title: "AI Provider 配置" },
     egress: { kicker: "系统设置 · 网络出站策略", title: "网络出口白名单 (Network Egress)" },
     workspace: { kicker: "系统设置 · 运行环境", title: "本地工作区与诊断信息" },
   };
@@ -104,7 +104,7 @@ export function SettingsPage({
             type="button"
             className="settings-back-btn"
             onClick={onClose}
-            aria-label="返回会话"
+            aria-label="关闭设置"
           >
             <ArrowLeft size={15} aria-hidden="true" />
             <span>返回会话</span>
@@ -181,7 +181,7 @@ export function SettingsPage({
                   <Cpu size={18} aria-hidden="true" />
                 </div>
                 <div>
-                  <h2>AI Provider 与模型调用</h2>
+                  <h2>Provider 与模型</h2>
                   <p>配置用于驱动 Lion 任务的基础大模型、服务商协议、访问凭据与思考推理深度</p>
                 </div>
               </div>
@@ -229,7 +229,7 @@ export function SettingsPage({
 
                 <div className="settings-field-group">
                   <div className="settings-field-label">
-                    <label htmlFor="provider-api-key">API Key (凭据)</label>
+                    <label htmlFor="provider-api-key">API key</label>
                     <span>本地安全加密存储，绝不明文上传云端</span>
                   </div>
                   <div className="settings-field-control">
@@ -239,6 +239,7 @@ export function SettingsPage({
                         type={apiKeyVisible ? "text" : "password"}
                         autoComplete="off"
                         value={apiKey}
+                        disabled={loadingConfiguration}
                         onChange={(event) => setApiKey(event.target.value)}
                         placeholder={
                           loadingConfiguration
@@ -268,13 +269,14 @@ export function SettingsPage({
 
                 <div className="settings-field-group">
                   <div className="settings-field-label">
-                    <label htmlFor="provider-base-url">API 基础地址 (Base URL)</label>
+                    <label htmlFor="provider-base-url">API 地址</label>
                     <span>可选自定义反向代理网关或本地中转地址</span>
                   </div>
                   <div className="settings-field-control">
                     <input
                       id="provider-base-url"
                       value={baseUrl}
+                      disabled={loadingConfiguration}
                       onChange={(event) => setBaseUrl(event.target.value)}
                       placeholder={
                         provider === "openai"

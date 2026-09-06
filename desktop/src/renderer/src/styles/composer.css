@@ -9,7 +9,7 @@
 .queue-controls button { display: inline-flex; min-height: 28px; align-items: center; gap: 5px; padding: 0 8px; border-radius: var(--radius-sm); color: var(--ds-text-secondary); font-size: 12px; }
 .queue-controls button:hover { color: var(--ds-text-primary); background: var(--ds-bg-hover); }
 .composer-shell { position: relative; width: 100%; border-radius: var(--radius-xl); background: var(--ds-bg-composer); backdrop-filter: blur(16px); box-shadow: var(--shadow-composer); isolation: isolate; border: 1px solid var(--ds-border-default); transition: border-color var(--motion-fast), box-shadow var(--motion-normal) var(--ease-out); }
-.composer-shell:focus-within { border-color: rgba(59, 130, 246, 0.4); box-shadow: 0 0 0 1px var(--ds-accent-glow), 0 12px 40px rgba(0, 0, 0, 0.5); }
+.composer-shell:focus-within { border-color: rgba(59, 130, 246, 0.4); box-shadow: var(--shadow-composer); }
 .composer-input-wrap { display: flex; min-height: 84px; padding: 10px 12px 0; }
 .composer-input { width: 100%; min-height: 68px; max-height: 7lh; overflow-y: auto; resize: none; border: 0; outline: none; color: var(--ds-text-primary); background: transparent; font-size: 14px; line-height: 1.45; }
 .composer-input-wrap textarea:focus, .composer-input-wrap textarea:focus-visible { outline: none; }
