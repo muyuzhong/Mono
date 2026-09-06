@@ -4,13 +4,17 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import json
 import os
 import signal
 import sys
+from dataclasses import asdict
+from pathlib import Path
 
 from .adapters.coding_session_backend import CodingSessionBackendAdapter
 from .application.commands import CommandResult
 from .application.session import LionCodingSession
+from .application.session_inspection import inspect_session
 from .capabilities.skill.discovery import discover_skills
 from .composition.full_product import build_full_coding_backend
 from .config import resolve_api_credentials
@@ -55,6 +59,14 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--resume", action="store_true", help="Resume last session")
     parser.add_argument(
+        "--inspect-session",
+        metavar="ID",
+        help="Inspect current-workspace JSONL without running an Agent",
+    )
+    parser.add_argument(
+        "--json", action="store_true", help="Print session inspection as JSON"
+    )
+    parser.add_argument(
         "--repl",
         action="store_true",
         help="Use the plain REPL instead of the default TUI",
@@ -62,7 +74,27 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-cost", type=float, default=None, help="Max USD spend")
     parser.add_argument("--max-turns", type=int, default=None, help="Max agentic turns")
     parser.add_argument("--help", "-h", action="store_true", help="Show help")
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.json and not args.inspect_session:
+        parser.error("--json requires --inspect-session")
+    if args.inspect_session and (
+        args.prompt
+        or args.resume
+        or args.repl
+        or args.yolo
+        or args.plan
+        or args.accept_edits
+        or args.dont_ask
+        or args.thinking
+        or args.model
+        or args.api_base
+        or args.max_cost is not None
+        or args.max_turns is not None
+    ):
+        parser.error(
+            "--inspect-session cannot be combined with Agent execution options"
+        )
+    return args
 
 
 def _resolve_permission_mode(args: argparse.Namespace) -> PermissionMode:
@@ -246,6 +278,8 @@ Options:
   --model, -m         Model to use (default: claude-opus-4-6, or LION_CODE_MODEL env)
   --api-base URL      Use OpenAI-compatible API endpoint (key via env var)
   --resume            Resume the last session
+  --inspect-session ID  Inspect current-workspace history without running an Agent
+  --json              Print inspection as JSON (requires --inspect-session)
   --repl              Plain REPL instead of the default TUI
   --max-cost USD      Stop when estimated cost exceeds this amount
   --max-turns N       Stop after N agentic turns
@@ -269,6 +303,45 @@ Examples:
   lion-code  # 启动 TUI（可先在界面内用 /model 配置 API）
 """)
         sys.exit(0)
+
+    if args.inspect_session:
+        try:
+            inspection = asyncio.run(
+                inspect_session(args.inspect_session, cwd=Path.cwd())
+            )
+        except ValueError:
+            print("Invalid session id", file=sys.stderr)
+            sys.exit(2)
+        if args.json:
+            print(json.dumps(asdict(inspection), ensure_ascii=True, indent=2))
+        else:
+            print(f"Session: {inspection.session_id}")
+            print(f"Read: {inspection.read_state}; coverage: {inspection.coverage}")
+            print(f"Snapshot: {inspection.snapshot_id or 'unavailable'}")
+            print(
+                f"Records: {inspection.record_count}; ignored tail bytes: {inspection.ignored_tail_bytes}"
+            )
+            print(
+                f"Tools: {inspection.tool_call_count} calls, {inspection.tool_result_count} results, "
+                f"{inspection.paired_tool_count} pairs, {inspection.unmatched_tool_calls} unmatched, "
+                f"{inspection.orphan_tool_results} orphan results, {inspection.duplicate_tool_ids} duplicates"
+            )
+            print(
+                f"Last assistant stop reason: {inspection.last_assistant_stop_reason or 'unavailable'}"
+            )
+            print("Run status: unknown (not recorded in this source)")
+            for diagnostic in inspection.diagnostics:
+                print(
+                    f"- {diagnostic.code}; line={diagnostic.line}; tool_ref={diagnostic.tool_ref}"
+                )
+            if inspection.diagnostics_omitted:
+                print(
+                    f"Additional diagnostics omitted: {inspection.diagnostics_omitted}"
+                )
+        has_findings = inspection.read_state not in ("readable", "empty") or any(
+            item.code != "status_incomplete" for item in inspection.diagnostics
+        )
+        sys.exit(1 if has_findings else 0)
 
     permission_mode = _resolve_permission_mode(args)
     model = args.model or os.environ.get("LION_CODE_MODEL", "claude-opus-4-6")

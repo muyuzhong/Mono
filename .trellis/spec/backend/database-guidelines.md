@@ -77,10 +77,16 @@ await recorder.record_message(message)
 - Bypassing `SessionRecorder` from the TUI, provider, or a sub-agent and thereby
   breaking entry ordering or session replay.
 - Rewriting a legacy file during migration; it is the user's rollback copy.
-- Parsing JSONL outside `JsonlSessionStorage` / `SessionJsonlError` and silently
-  accepting malformed persisted data.
+- Parsing JSONL without the canonical `entry_from_json_line` decoder and
+  silently accepting malformed persisted data. Read-only inspection in
+  `session_runtime/inspection.py` uses the same decoder with bounded reads;
+  it never calls restore, migration, append, or repair. Its workspace check
+  belongs to the inspection query, not to general repository listing.
 
 ## Representative tests
+
+- `tests/session_runtime/test_inspection.py` covers bounded read-only snapshots,
+  workspace checks, malformed history, concurrent changes and tool pairing.
 
 - `tests/session_runtime/test_repository.py` covers repository validation,
   listing and JSONL loading behavior.

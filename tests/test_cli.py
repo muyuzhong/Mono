@@ -1,5 +1,6 @@
 """CLI 入口的通用参数与帮助文本契约。"""
 
+import json
 import sys
 from argparse import Namespace
 from unittest.mock import patch
@@ -15,6 +16,82 @@ from lion_code.__main__ import (
 )
 from lion_code.application.commands import CommandResult
 from lion_code.composition.full_product import build_full_coding_backend
+
+
+@pytest.mark.parametrize("as_json", [False, True])
+def test_inspect_session_is_read_only_and_skips_agent_setup(
+    tmp_path, monkeypatch, capsys, as_json
+):
+    from lion_code.core.messages import AssistantMessage
+    from lion_code.core.session.entries import MessageEntry, SessionInfoEntry
+    from lion_code.core.session.jsonl import entry_to_json_line
+
+    path = tmp_path / "local.jsonl"
+    path.write_text(
+        entry_to_json_line(SessionInfoEntry(cwd=str(tmp_path)))
+        + entry_to_json_line(
+            MessageEntry(message=AssistantMessage(content="private-answer"))
+        ),
+        encoding="utf-8",
+    )
+    original = path.read_bytes(), path.stat().st_mtime_ns
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr("lion_code.session_runtime.repository.SESSION_DIR", tmp_path)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["lion-code", "--inspect-session", "local"] + (["--json"] if as_json else []),
+    )
+    with (
+        patch("lion_code.__main__.resolve_api_credentials") as credentials,
+        patch("lion_code.__main__.build_full_coding_backend") as build,
+    ):
+        with pytest.raises(SystemExit) as exited:
+            main()
+        credentials.assert_not_called()
+        build.assert_not_called()
+    assert exited.value.code == 0
+    output = capsys.readouterr().out
+    assert "private-answer" not in output
+    if as_json:
+        document = json.loads(output)
+        assert document["read_state"] == "readable"
+        assert document["run_status"] == "unknown"
+        assert document["last_assistant_stop_reason"] == "stop"
+    else:
+        assert "Run status: unknown" in output
+    assert (path.read_bytes(), path.stat().st_mtime_ns) == original
+
+
+@pytest.mark.parametrize(
+    "options",
+    [
+        ["--json"],
+        ["--inspect-session", "s1", "prompt"],
+        ["--inspect-session", "s1", "--resume"],
+    ],
+)
+def test_inspection_rejects_ambiguous_cli_modes(monkeypatch, options):
+    monkeypatch.setattr(sys, "argv", ["lion-code", *options])
+    with pytest.raises(SystemExit) as exited:
+        parse_args()
+    assert exited.value.code == 2
+
+
+def test_inspection_missing_has_nonzero_exit_without_creating_state(
+    tmp_path, monkeypatch, capsys
+):
+    monkeypatch.setattr(
+        "lion_code.session_runtime.repository.SESSION_DIR", tmp_path / "absent"
+    )
+    monkeypatch.setattr(
+        sys, "argv", ["lion-code", "--inspect-session", "missing", "--json"]
+    )
+    with pytest.raises(SystemExit) as exited:
+        main()
+    assert exited.value.code == 1
+    assert json.loads(capsys.readouterr().out)["read_state"] == "missing"
+    assert not (tmp_path / "absent").exists()
 
 
 def test_legacy_tui_option_is_rejected(monkeypatch) -> None:

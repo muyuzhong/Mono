@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import uuid
 from collections.abc import AsyncIterator
 from contextlib import suppress
@@ -30,6 +31,7 @@ from .models import (
     ServerErrorEvent,
     SteerAction,
 )
+from .wire import WireLimitError, decode_wire_text
 
 
 class SessionWebsocketBridge:
@@ -46,6 +48,7 @@ class SessionWebsocketBridge:
         self._background_tasks: set[asyncio.Task[None]] = set()
         self._bound = False
         self._closed = False
+        self._wire_failed = False
 
     def bind_callbacks(self) -> None:
         """把 Session 交互回调绑定到当前连接 owner。"""
@@ -85,16 +88,44 @@ class SessionWebsocketBridge:
 
     async def send_model(self, model: BaseModel) -> None:
         """串行发送一个 canonical camelCase wire model。"""
-        if self._closed:
+        if self._closed or self._wire_failed:
+            return
+        try:
+            text = model.model_dump_json(by_alias=True)
+            decode_wire_text(text)
+        except (ValueError, RecursionError):
+            await self.reject_wire("服务端消息超出 WebSocket 大小或结构上限")
             return
         async with self._send_lock:
-            if not self._closed:
-                await self._ws.send_text(model.model_dump_json(by_alias=True))
+            if not self._closed and not self._wire_failed:
+                await self._ws.send_text(text)
+
+    async def reject_wire(self, message: str, *, code: int = 1009) -> None:
+        """停止派发并拒绝待审批请求；运行任务由原有 aclose 路径收敛。"""
+        async with self._send_lock:
+            if self._closed or self._wire_failed:
+                return
+            self._wire_failed = True
+            self._deny_pending_requests()
+            if self._run_in_progress():
+                self._session.cancel()
+            try:
+                await self._ws.send_text(
+                    ProtocolErrorEvent(message=message).model_dump_json(by_alias=True)
+                )
+            finally:
+                await self._ws.close(code=code)
 
     async def handle_inbound_text(self, message_text: str) -> None:
+        if self._closed or self._wire_failed:
+            return
         try:
-            action = CLIENT_ACTION_ADAPTER.validate_json(message_text)
-        except ValidationError:
+            data = decode_wire_text(message_text)
+            action = CLIENT_ACTION_ADAPTER.validate_python(data)
+        except WireLimitError:
+            await self.reject_wire("客户端消息超出 WebSocket 大小或结构上限")
+            return
+        except (ValidationError, ValueError):
             await self._send_protocol_error("客户端消息不符合 WebSocket action 契约")
             return
         await self._dispatch(action)
@@ -102,14 +133,14 @@ class SessionWebsocketBridge:
     async def handle_inbound_data(self, data: object) -> None:
         """供 ASGI 边界与单元测试共享同一个严格解码入口。"""
         try:
-            action = CLIENT_ACTION_ADAPTER.validate_python(data)
-        except ValidationError:
+            text = json.dumps(data, ensure_ascii=False)
+        except (TypeError, ValueError, RecursionError):
             await self._send_protocol_error("客户端消息不符合 WebSocket action 契约")
             return
-        await self._dispatch(action)
+        await self.handle_inbound_text(text)
 
     async def _on_confirm(self, message: str) -> bool:
-        if self._closed:
+        if self._closed or self._wire_failed:
             return False
         request_id = str(uuid.uuid4())
         future = asyncio.get_running_loop().create_future()
@@ -123,7 +154,7 @@ class SessionWebsocketBridge:
             self._pending_confirms.pop(request_id, None)
 
     async def _on_plan_approval(self, plan: str) -> dict[str, Any]:
-        if self._closed:
+        if self._closed or self._wire_failed:
             return {"choice": "keep-planning"}
         request_id = str(uuid.uuid4())
         future: asyncio.Future[dict[str, Any]] = (

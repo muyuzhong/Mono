@@ -58,6 +58,24 @@ API-only adapter; it must not locate, mount, or fall back to a browser frontend.
 
 ## 4. Validation & Error Matrix
 
+### WebSocket resource bounds
+
+The API bridge and Desktop transport enforce the same limits in both directions:
+1,048,576 UTF-8 bytes per JSON text frame, 262,144 UTF-8 bytes per decoded string
+(including object keys), 4,096 items per array/object, and maximum value depth 32
+(root depth is zero). Frame size is checked before JSON parsing; structural bounds
+are checked before action/event dispatch. Escaped text is measured after decoding.
+The shared vectors in `tests/fixtures/websocket-bounds.json` exercise both decoders.
+
+Oversized frames/fields/structures are rejected without truncation. The server
+sends a bounded `protocol_error`, closes with 1009, denies pending approvals and
+cancels an active run through the existing bridge lifecycle. Binary input closes
+with 1003. Desktop rejects invalid inbound data before reducer dispatch and closes
+the connection; rejected local sends return false without sending a partial action.
+Canonical messages are not rewritten to fit the wire budget. These are per-frame
+application limits, not a cumulative streaming, REST history, or persistence quota;
+the ASGI WebSocket implementation may impose its own transport limit before them.
+
 | Condition | Result |
 | --- | --- |
 | empty, relative, missing, or non-directory workspace | `failed / workspace_invalid`; no spawn |

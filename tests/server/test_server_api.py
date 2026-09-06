@@ -79,8 +79,9 @@ class MockWebSocket:
     async def send_text(self, text: str) -> None:
         self.sent_texts.append(text)
 
-    async def close(self) -> None:
+    async def close(self, code: int = 1000) -> None:
         self.closed = True
+        self.close_code = code
 
 
 class BlockingMockWebSocket(MockWebSocket):
@@ -780,6 +781,68 @@ def test_websocket_rejects_second_owner_without_disturbing_first() -> None:
         assert backend.confirm_fn is not first_confirm
         replacement.send_text("not-json")
         assert replacement.receive_json()["type"] == "protocol_error"
+
+
+@pytest.mark.parametrize("binary", [False, True])
+def test_websocket_rejects_unbounded_or_binary_input_without_starting_run(binary):
+    session, backend = _build_test_session()
+    client = _build_client(session)
+    with client.websocket_connect(
+        _WS_URL, subprotocols=_websocket_protocols(), headers={"Origin": _APP_ORIGIN}
+    ) as websocket:
+        if binary:
+            websocket.send_bytes(b'{"action":"prompt","prompt":"work"}')
+        else:
+            websocket.send_json({"action": "prompt", "prompt": "😀" * 65_537})
+        assert websocket.receive_json()["type"] == "protocol_error"
+        with pytest.raises(WebSocketDisconnect) as closed:
+            websocket.receive_json()
+        assert closed.value.code == (1003 if binary else 1009)
+    assert backend.prompt_calls == 0
+    assert backend.messages == ()
+
+
+async def test_oversized_approval_denies_pending_requests_and_cancels_run():
+    session, backend = _build_test_session()
+    backend.wait_for_cancel = True
+    websocket = MockWebSocket()
+    bridge = SessionWebsocketBridge(session, websocket)  # type: ignore[arg-type]
+    bridge.bind_callbacks()
+    await bridge.handle_inbound_text('{"action":"prompt","prompt":"work"}')
+    await backend.prompt_started.wait()
+    assert backend.plan_approval_fn is not None
+    result = await asyncio.wait_for(backend.plan_approval_fn("x" * 262_145), timeout=2)
+    assert result == {"choice": "keep-planning"}
+    assert websocket.closed and websocket.close_code == 1009
+    assert json.loads(websocket.sent_texts[-1])["type"] == "protocol_error"
+    assert all("plan_approval_request" not in text for text in websocket.sent_texts)
+    await bridge.handle_inbound_text('{"action":"prompt","prompt":"ignored"}')
+    await bridge.aclose()
+    assert backend.prompt_calls == 1
+    assert backend.cancel_calls >= 1
+    assert backend.confirm_fn is None
+    assert backend.plan_approval_fn is None
+
+
+def test_oversized_server_event_closes_without_delivering_partial_message():
+    session, backend = _build_test_session()
+    backend.prompt_scripts.append(
+        [
+            MessageStartEvent(
+                message=AssistantMessage(content=(TextContent(text="x" * 262_145),))
+            ),
+            AgentEndEvent(),
+        ]
+    )
+    client = _build_client(session)
+    with client.websocket_connect(
+        _WS_URL, subprotocols=_websocket_protocols(), headers={"Origin": _APP_ORIGIN}
+    ) as websocket:
+        websocket.send_json({"action": "prompt", "prompt": "work"})
+        assert websocket.receive_json()["type"] == "protocol_error"
+        with pytest.raises(WebSocketDisconnect) as closed:
+            websocket.receive_json()
+        assert closed.value.code == 1009
 
 
 def test_websocket_plan_continue_and_compact_actions_end_to_end(

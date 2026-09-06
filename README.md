@@ -52,6 +52,7 @@ Lion Code 提供覆盖桌面 GUI、终端 TUI、命令行 CLI 以及 Python SDK 
 
 - 单次执行：`lion-code "任务描述"`，执行完成后自动退出，适配自动化与 CI。
 - 交互 REPL：`lion-code --repl` 启动轻量纯文本交互，支持 `/clear`、`/plan`、`/cost` 等命令。
+- 只读诊断：在原工作区运行 `lion-code --inspect-session <ID>`，检查历史完整性和工具配对；加 `--json` 输出结构化结果。详见[检查点与诊断](docs/architecture/checkpoint-recovery.md#只读会话诊断)。
 
 ### 4. 嵌入式 Python SDK
 

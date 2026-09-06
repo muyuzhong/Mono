@@ -574,14 +574,24 @@ def create_app(
             await websocket.accept(subprotocol=_WEBSOCKET_PROTOCOL)
             bridge.bind_callbacks()
             while True:
-                message_text = await websocket.receive_text()
-                await bridge.handle_inbound_text(message_text)
+                message = await websocket.receive()
+                if message["type"] == "websocket.disconnect":
+                    break
+                if not isinstance(message.get("text"), str):
+                    await bridge.reject_wire("WebSocket 只接受文本帧", code=1003)
+                    break
+                await bridge.handle_inbound_text(message["text"])
+                if websocket.application_state == WebSocketState.DISCONNECTED:
+                    break
         except (WebSocketDisconnect, ConnectionResetError):
             pass
         finally:
             await bridge.aclose()
             websocket_lease.release(bridge)
-            if websocket.client_state == WebSocketState.CONNECTED:
+            if (
+                websocket.client_state == WebSocketState.CONNECTED
+                and websocket.application_state == WebSocketState.CONNECTED
+            ):
                 await websocket.close()
 
     return app

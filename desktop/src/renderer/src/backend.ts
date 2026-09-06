@@ -1,4 +1,5 @@
 import type { BackendEndpoint } from "../../shared/types";
+import { decodeWireText } from "../../shared/wire";
 import { decodeServerEvent, isOpenableResourceRef, type ChatMessage, type ClientAction, type OpenableResourceRef, type ServerEvent } from "../../shared/chat";
 
 const CAPABILITY_PATTERN = /^[A-Za-z0-9_-]{32,128}$/;
@@ -267,20 +268,31 @@ export class LionWebSocketTransport {
       this.listener({ type: "disconnected" });
     };
     socket.onmessage = ({ data }) => {
+      if (this.socket !== socket) return;
       try {
         if (typeof data !== "string") throw new Error("非文本帧");
-        const event = decodeServerEvent(JSON.parse(data));
+        const event = decodeServerEvent(decodeWireText(data));
         if (!event) throw new Error("事件 schema 非法");
         this.listener({ type: "event", event });
       } catch {
         this.listener({ type: "protocol_error", message: "服务端消息不符合 WebSocket event 契约" });
+        this.close();
       }
     };
   }
 
   send(action: ClientAction): boolean {
     if (!this.socket || this.socket.readyState !== 1) return false;
-    this.socket.send(JSON.stringify(action));
+    let text: string;
+    try {
+      text = JSON.stringify(action);
+      decodeWireText(text);
+    } catch {
+      this.listener({ type: "protocol_error", message: "客户端消息超出 WebSocket 大小或结构上限" });
+      this.close();
+      return false;
+    }
+    this.socket.send(text);
     return true;
   }
 
