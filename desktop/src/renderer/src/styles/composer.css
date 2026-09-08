@@ -8,12 +8,12 @@
 .queue-controls input { min-width: 0; padding: 0 6px; border: 0; outline: 0; background: transparent; }
 .queue-controls button { display: inline-flex; min-height: 28px; align-items: center; gap: 5px; padding: 0 8px; border-radius: var(--radius-sm); color: var(--ds-text-secondary); font-size: 12px; }
 .queue-controls button:hover { color: var(--ds-text-primary); background: var(--ds-bg-hover); }
-.composer-shell { position: relative; width: 100%; border-radius: var(--radius-xl); background: var(--ds-bg-composer); box-shadow: var(--shadow-composer); isolation: isolate; transition: box-shadow var(--motion-normal) var(--ease-out); }
-.composer-shell:focus-within { box-shadow: var(--shadow-composer); }
+.composer-shell { position: relative; width: 100%; border-radius: var(--radius-xl); background: var(--ds-bg-composer); backdrop-filter: blur(16px); box-shadow: var(--shadow-composer); isolation: isolate; border: 1px solid var(--ds-border-default); transition: border-color var(--motion-fast), box-shadow var(--motion-normal) var(--ease-out); }
+.composer-shell:focus-within { border-color: rgba(59, 130, 246, 0.4); box-shadow: var(--shadow-composer); }
 .composer-input-wrap { display: flex; min-height: 84px; padding: 10px 12px 0; }
 .composer-input { width: 100%; min-height: 68px; max-height: 7lh; overflow-y: auto; resize: none; border: 0; outline: none; color: var(--ds-text-primary); background: transparent; font-size: 14px; line-height: 1.45; }
 .composer-input-wrap textarea:focus, .composer-input-wrap textarea:focus-visible { outline: none; }
-.composer-input::placeholder { color: var(--ds-text-secondary); opacity: .72; }
+.composer-input::placeholder { color: var(--ds-text-secondary); opacity: .65; }
 .composer-skill-menu { position: absolute; z-index: 50; bottom: 150px; left: 50%; display: flex; width: min(calc(100% - 48px), 900px); max-height: min(360px, calc(100vh - 220px)); flex-direction: column; overflow: hidden; border: 1px solid var(--ds-border-default); border-radius: var(--radius-md); background: var(--ds-bg-elevated); box-shadow: 0 16px 44px #0009; transform: translateX(-50%); }
 .composer-skill-menu [role="group"] { min-height: 0; overflow-y: auto; padding: 0 5px 5px; }
 .composer-skill-heading { display: flex; height: 34px; align-items: center; gap: 7px; margin: 0 -5px 5px; padding: 0 10px; border-bottom: 1px solid var(--ds-border-subtle); color: var(--ds-text-secondary); font-size: 12px; }
@@ -24,10 +24,10 @@
 .composer-skill-item small { overflow: hidden; color: var(--ds-text-muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .composer-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 8px 8px; }
 .composer-left, .composer-right { display: flex; min-width: 0; align-items: center; gap: 4px; }
-.composer-mode, .composer-model, .composer-thinking, .composer-tool { display: inline-flex; height: 28px; align-items: center; gap: 6px; padding: 0 8px; border-radius: var(--radius-full); color: var(--ds-text-secondary); font-size: 12px; white-space: nowrap; }
-.composer-tool:hover, .composer-model:hover, .composer-thinking:hover { color: var(--ds-text-primary); background: var(--ds-bg-hover); }
-.composer-model { max-width: 190px; overflow: hidden; color: var(--ds-text-primary); text-overflow: ellipsis; }
-.composer-thinking { padding-inline: 5px; color: var(--ds-text-muted); }
+.composer-mode, .composer-model, .composer-thinking, .composer-tool { display: inline-flex; height: 26px; align-items: center; gap: 5px; padding: 0 8px; border-radius: var(--radius-full); border: 1px solid var(--ds-border-subtle); background: rgba(255, 255, 255, 0.025); color: var(--ds-text-secondary); font-size: 11.5px; white-space: nowrap; transition: all var(--motion-fast); }
+.composer-tool:hover, .composer-model:hover, .composer-thinking:hover { color: var(--ds-text-primary); background: var(--ds-bg-hover); border-color: var(--ds-border-default); }
+.composer-model { max-width: 190px; overflow: hidden; color: var(--ds-text-primary); text-overflow: ellipsis; font-weight: 480; }
+.composer-thinking { padding-inline: 7px; color: var(--ds-text-muted); font-family: var(--font-mono); font-size: 11px; }
 .composer-more { position: relative; }
 .composer-more > summary { list-style: none; cursor: pointer; }
 .composer-more > summary::-webkit-details-marker { display: none; }
@@ -37,11 +37,75 @@
 .composer-more-menu button > span { display: grid; gap: 1px; }
 .composer-more-menu strong { font-size: 12px; font-weight: 500; }
 .composer-more-menu small { color: var(--ds-text-muted); font-size: 10.5px; }
-.send-btn, .stop-btn { display: inline-flex; width: 28px; height: 28px; align-items: center; justify-content: center; border-radius: 50%; }
-.send-btn { color: var(--gray-1000); background: var(--gray-0); }
+.send-btn, .stop-btn { display: inline-flex; width: 28px; height: 28px; align-items: center; justify-content: center; border-radius: 50%; transition: all var(--motion-fast); }
+.send-btn { color: #fff; background: var(--ds-accent); }
+.send-btn:hover:not(:disabled) { background: var(--ds-accent-hover); box-shadow: 0 0 12px var(--ds-accent-glow); }
 .stop-btn { color: var(--ds-text-primary); background: color-mix(in oklab, var(--ds-text-primary) 16%, transparent); }
-:root[data-theme="light"] .send-btn { color: var(--gray-0); background: var(--gray-1000); }
-.send-btn:hover:not(:disabled), .stop-btn:hover:not(:disabled) { opacity: .86; }
-.send-btn:disabled { opacity: 1; color: color-mix(in oklab, var(--ds-bg-primary) 92%, transparent); background: color-mix(in oklab, var(--ds-text-primary) 18%, transparent); }
-.send-btn:active:not(:disabled), .stop-btn:active:not(:disabled) { transform: scale(.94); }
+:root[data-theme="light"] .send-btn { color: #fff; background: var(--ds-accent); }
+.send-btn:hover:not(:disabled), .stop-btn:hover:not(:disabled) { opacity: .95; }
+.send-btn:disabled { opacity: .35; color: var(--ds-text-muted); background: rgba(255, 255, 255, 0.08); }
+.send-btn:active:not(:disabled), .stop-btn:active:not(:disabled) { transform: scale(.92); }
 @media (max-width: 720px) { .composer-model, .composer-thinking, .composer-tool { display: none; } .composer-dock { padding-inline: 12px; } .composer-stack { width: 100%; } }
+
+/* 快捷下拉菜单（模型与思考级别） */
+.composer-popover-wrap { position: relative; display: inline-flex; }
+.composer-popover-menu { position: absolute; bottom: calc(100% + 8px); right: 0; z-index: 60; display: flex; flex-direction: column; min-width: 220px; max-width: 280px; max-height: 280px; overflow-y: auto; padding: 6px; border: 1px solid var(--ds-border-default); border-radius: var(--radius-md); background: var(--ds-bg-elevated); box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5); backdrop-filter: blur(16px); }
+.composer-popover-header { display: flex; align-items: center; gap: 6px; padding: 4px 8px 6px; border-bottom: 1px solid var(--ds-border-subtle); color: var(--ds-text-muted); font-size: 11px; font-weight: 500; letter-spacing: 0.02em; }
+.composer-popover-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; padding: 6px 8px; margin-block: 1px; border: 1px solid transparent; border-radius: var(--radius-xs); background: transparent; color: var(--ds-text-secondary); text-align: left; cursor: pointer; transition: all var(--motion-fast); }
+.composer-popover-item:hover { color: var(--ds-text-primary); background: var(--ds-bg-hover); }
+.composer-popover-item.active { color: var(--ds-accent); background: rgba(59, 130, 246, 0.08); border-color: rgba(59, 130, 246, 0.2); }
+.composer-popover-item span { display: flex; flex-direction: column; min-width: 0; gap: 1px; }
+.composer-popover-item strong { font-size: 12px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.composer-popover-item small { font-size: 10.5px; color: var(--ds-text-muted); font-family: var(--font-mono); }
+.composer-popover-divider { height: 1px; margin: 4px 0; background: var(--ds-border-subtle); }
+.composer-popover-action { display: flex; align-items: center; gap: 6px; width: 100%; padding: 6px 8px; border: none; border-radius: var(--radius-xs); background: transparent; color: var(--ds-text-muted); font-size: 11.5px; text-align: left; cursor: pointer; transition: all var(--motion-fast); }
+.composer-popover-action:hover { color: var(--ds-text-primary); background: var(--ds-bg-hover); }
+
+/* 极客遥测指标状态条（借鉴 DeepSeek Harness 底部单行状态条设计） */
+.composer-telemetry-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 8px;
+  padding: 0 4px;
+  color: var(--ds-text-muted);
+  font-size: 11px;
+  user-select: none;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.composer-telemetry-bar strong {
+  font-weight: 500;
+  color: var(--ds-text-secondary);
+}
+
+.telemetry-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.telemetry-sep {
+  color: var(--ds-border-default);
+  opacity: 0.6;
+}
+
+.telemetry-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  transition: all var(--motion-normal);
+}
+
+.telemetry-dot.idle {
+  background: #10b981;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.4);
+}
+
+.telemetry-dot.streaming {
+  background: #3b82f6;
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
+  animation: pulse 1.2s infinite;
+}

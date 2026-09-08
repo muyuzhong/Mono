@@ -38,7 +38,13 @@ export function ToolActivity({ toolCallId, toolName, args, result, isError, arti
         <span className="tool-row-name">{toolName}</span>
         {agentType ? <span className="tool-row-agent">{agentType}</span> : null}
         {summary ? <span className="tool-row-summary">{summary}</span> : null}
-        <span className={`tool-state ${state}`}><i aria-hidden="true" />{state === "running" ? "运行中" : state === "error" ? "失败" : "完成"}</span>
+        <span
+          className={`tool-state ${state}`}
+          title={state === "running" ? "运行中" : state === "error" ? "失败" : "已完成"}
+          aria-label={state === "running" ? "运行中" : state === "error" ? "失败" : "已完成"}
+        >
+          <i aria-hidden="true" />
+        </span>
         <ChevronRight className="disclosure" aria-hidden="true" size={14} />
       </summary>
       <div className="tool-row-body">

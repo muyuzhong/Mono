@@ -73,6 +73,14 @@
 .conversation-topbar { z-index: 10; display: flex; height: var(--toolbar-height); flex: 0 0 var(--toolbar-height); align-items: center; justify-content: space-between; padding: 0 12px; border-bottom: 1px solid var(--ds-border-subtle); background: var(--ds-bg-primary); -webkit-app-region: drag; }
 .ct-left, .ct-actions { display: flex; min-width: 0; align-items: center; gap: 8px; -webkit-app-region: no-drag; }
 .ct-left strong { overflow: hidden; font-size: 13px; font-weight: 500; letter-spacing: -.01em; text-overflow: ellipsis; white-space: nowrap; }
+.ct-mode-pill { display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 7px; border-radius: var(--radius-full); background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.2); color: var(--ds-accent); font-size: 11px; font-weight: 500; user-select: none; }
+.ct-center { display: flex; align-items: center; justify-content: center; -webkit-app-region: no-drag; }
+.ct-views { display: flex; align-items: center; gap: 4px; padding: 2px; border-radius: var(--radius-sm); background: var(--ds-bg-secondary); border: 1px solid var(--ds-border-subtle); }
+.ct-view-tab { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: var(--radius-xs); background: transparent; border: none; color: var(--ds-text-secondary); font-size: 12px; font-weight: 500; cursor: pointer; transition: all var(--motion-fast); }
+.ct-view-tab:hover { color: var(--ds-text-primary); background: var(--ds-bg-hover); }
+.ct-view-tab.active { color: var(--ds-text-primary); background: var(--ds-bg-elevated); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2); font-weight: 600; }
+.ct-view-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 9999px; background: rgba(59, 130, 246, 0.2); color: var(--ds-accent); font-size: 10px; font-family: var(--font-mono); }
+.trajectory-view-content { display: flex; flex: 1; min-height: 0; width: 100%; }
 .transport-indicator { display: inline-flex; width: 22px; height: 28px; align-items: center; justify-content: center; }
 .transport-indicator i { width: 6px; height: 6px; border-radius: 50%; background: var(--ds-text-faint); }
 .transport-indicator.connected i { background: var(--ds-success); }
