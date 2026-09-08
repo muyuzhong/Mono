@@ -7,10 +7,9 @@
 from __future__ import annotations
 
 import sys
-import threading
-import time
 
 from rich.console import Console
+from rich.status import Status
 
 console = Console(highlight=False)
 
@@ -95,71 +94,34 @@ def print_divider() -> None:
     console.print(f"\n[dim]  {'─' * 50}[/dim]")
 
 
-def print_cost(input_tokens: int, output_tokens: int, cache_read: int = 0, cache_creation: int = 0) -> None:
-    # 与 Agent 的费用估算保持同一倍率，避免状态栏和预算检查显示不同金额。
-    total = (
-        (input_tokens / 1_000_000) * 3
-        + (cache_read / 1_000_000) * 0.3
-        + (cache_creation / 1_000_000) * 3.75
-        + (output_tokens / 1_000_000) * 15
-    )
-    cache_str = f", {cache_read} cached" if cache_read else ""
-    console.print(f"\n[dim]  Tokens: {input_tokens} in / {output_tokens} out{cache_str} (~${total:.4f})[/dim]")
-
-
-def print_retry(attempt: int, max_retries: int, reason: str) -> None:
-    console.print(f"\n  [yellow]↻ Retry {attempt}/{max_retries}: {reason}[/yellow]")
-
-
 def print_info(msg: str) -> None:
     console.print(f"\n  [cyan]ℹ {msg}[/cyan]")
 
 
 # ─── 等待动画 ───────────────────────────────────────────────
 
-SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
-_SPINNER_FRAMES_ASCII = ["|", "/", "-", "\\"]
-
-
-def _spinner_frames() -> list[str]:
-    """UTF-8 控制台用盲文帧；其他编码（如 GBK）退化为 ASCII 帧以保证动画可见。"""
-    encoding = (getattr(sys.stdout, "encoding", "") or "").lower()
-    return SPINNER_FRAMES if encoding in ("utf-8", "utf8") else _SPINNER_FRAMES_ASCII
-
-_spinner_thread: threading.Thread | None = None
-_spinner_stop = threading.Event()
+_spinner: Status | None = None
 
 
 def start_spinner(label: str = "Thinking") -> None:
-    global _spinner_thread
-    if _spinner_thread is not None:
+    global _spinner
+    if _spinner is not None:
         return
-    _spinner_stop.clear()
-
-    def _run() -> None:
-        frames = _spinner_frames()
-        frame = 0
-        sys.stdout.write(f"\n  {frames[0]} {label}...")
-        sys.stdout.flush()
-        while not _spinner_stop.is_set():
-            time.sleep(0.08)
-            frame = (frame + 1) % len(frames)
-            sys.stdout.write(f"\r  {frames[frame]} {label}...")
-            sys.stdout.flush()
-
-    _spinner_thread = threading.Thread(target=_run, daemon=True)
-    _spinner_thread.start()
+    # 非 UTF-8 控制台使用 ASCII 动画，避免字符无法编码。
+    encoding = (getattr(sys.stdout, "encoding", "") or "").lower()
+    _spinner = console.status(
+        f"  {label}...",
+        spinner="dots" if encoding in ("utf-8", "utf8") else "line",
+    )
+    _spinner.start()
 
 
 def stop_spinner() -> None:
-    global _spinner_thread
-    if _spinner_thread is None:
+    global _spinner
+    if _spinner is None:
         return
-    _spinner_stop.set()
-    _spinner_thread.join(timeout=1)
-    _spinner_thread = None
-    sys.stdout.write("\r\033[K")
-    sys.stdout.flush()
+    _spinner.stop()
+    _spinner = None
 
 
 # ─── Plan 审批界面 ──────────────────────────────────────────
