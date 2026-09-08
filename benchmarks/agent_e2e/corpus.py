@@ -89,7 +89,7 @@ class HistoricalPreflight:
 
 
 def bundled_catalog() -> Catalog:
-    """返回 V1 的公开 catalog；调用方可序列化后单独挂载给 Agent。"""
+    """返回 v2 的公开 catalog；调用方可序列化后单独挂载给 Agent。"""
 
     return Catalog(
         catalog_id=CORPUS_ID,
@@ -109,10 +109,11 @@ def validate_active_resources_exist(
     *,
     repository_root: str | Path = _REPOSITORY_ROOT,
 ) -> None:
-    """校验 ACTIVE 条目引用的文件在当前工作树存在。
+    """校验 ACTIVE 条目引用的文件在当前工作树或历史 revision 存在。
 
-    v1 是 SHA-256 钉定资产，历史失效条目保留其版本语义；本校验对 v2 起的
-    catalog 生效，作为门禁阻止失效 involved_files / validation 命令再次进入。
+    v1 是 SHA-256 钉定资产，历史失效条目保留其版本语义；v2 的历史任务可能
+    引用当前工作树已删除的文件，因此优先检查当前工作树，缺失时回到任务的
+    base/gold revision 检查，以保证历史回放仍可执行。
     """
 
     if catalog.catalog_version == "v1":
@@ -122,19 +123,40 @@ def validate_active_resources_exist(
     for task in catalog.tasks:
         if task.status is not TaskStatus.ACTIVE:
             continue
+        historical_revisions = (
+            task.base_revision,
+            _GOLD_REVISIONS.get(task.task_id),
+        )
         for relative in task.involved_files:
-            if not (root / relative).exists():
+            if not _resource_exists(root, historical_revisions, relative):
                 missing.append(f"{task.task_id} involved_files: {relative}")
         for command in task.public_validation_commands:
             for token in command.split():
-                if (token.startswith("tests/") or token.startswith("benchmarks/")) and not (
-                    root / token
-                ).exists():
+                if (
+                    token.startswith("tests/") or token.startswith("benchmarks/")
+                ) and not _resource_exists(root, historical_revisions, token):
                     missing.append(f"{task.task_id} validation: {token}")
     if missing:
         raise CorpusAdmissionError(
             "ACTIVE 条目引用了缺失文件: " + "; ".join(missing)
         )
+
+
+def _resource_exists(
+    repository_root: Path,
+    revisions: Iterable[str | None],
+    relative: str,
+) -> bool:
+    """检查资源是否存在于当前工作树或任务的历史 base/gold revision。"""
+
+    if (repository_root / relative).exists():
+        return True
+    return any(
+        revision is not None
+        and _git_status(repository_root, "cat-file", "-e", f"{revision}:{relative}")
+        == 0
+        for revision in revisions
+    )
 
 
 def validate_corpus(

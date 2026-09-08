@@ -25,7 +25,6 @@ _FORBIDDEN_IMPORTS = {
     "lion_code.providers",
     "lion_code.session_runtime",
     "lion_code.tooling",
-    "lion_code.tui",
     "lion_code.usage",
 }
 _FORBIDDEN_TERMS = {

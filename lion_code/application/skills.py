@@ -1,4 +1,4 @@
-"""Skill 的 TUI 视图模型(vendored 自 tau_coding/skills.py 的子集)。
+"""Skill 的应用层视图模型。
 
 Lion 的 skill 发现与执行仍在 :mod:`lion_code.capabilities.skill.discovery`(SkillDefinition);
 本模块只承载前端所需的不可变视图类型 :class:`Skill`,

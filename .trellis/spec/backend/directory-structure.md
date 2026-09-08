@@ -35,8 +35,7 @@ lion_code/
 ├── session_runtime/     # Canonical JSONL repository and recorder
 ├── providers/           # Anthropic and OpenAI-compatible HTTP providers
 ├── application/         # LionCodingSession and frontend-facing ports
-├── supervisor.py        # Agent-external goal/retry/scheduler/checkpoint plane
-└── tui/                 # Textual interface
+└── supervisor.py        # Agent-external goal/retry/scheduler/checkpoint plane
 ```
 
 Other root modules such as `hooks.py` remain standalone process/runtime
@@ -56,7 +55,7 @@ to provide a shorter import path.
 - Put Agent object-graph construction and the Full product bootstrap in
   `lion_code/composition/`. The builder owns concrete runtime wiring and
   Profile-selected capability registration; `full_product.py` owns the
-  application/TUI product factory and reuses that builder. `meta_agent.py` is
+  application product factory and reuses that builder. `meta_agent.py` is
   the feature-neutral public facade. Product-specific frontend delegation
   belongs in `adapters/`, whose modules implement adapters only. The composition
   result is explicit and one-shot: no builder, container, or service locator is
@@ -76,9 +75,8 @@ to provide a shorter import path.
   `tooling/runtime.py`, `tooling/middleware.py`, and `tooling/builtin.py`.
 - Put durable-session coordination in `lion_code/session_runtime/`.  The
   repository locates/replays JSONL, while the recorder appends entries.  Do not
-  make the TUI or a provider write session files directly.
-- Put Textual widgets, state and rendering in `lion_code/tui/`; non-Textual
-  terminal event rendering belongs in `lion_code/observers/terminal.py`.
+  make a frontend, provider, or sub-agent write session files directly.
+- Put terminal event rendering in `lion_code/observers/terminal.py`.
 - Put autonomous goal, scheduler, retry and checkpoint control only in
   `supervisor.py`. Supervisor consumes an `AgentFactory` returning the public
   `AgentPort`; Profiles, MetaAgent, Kernel, Harness and Capabilities do not know
@@ -93,8 +91,8 @@ to provide a shorter import path.
   Examples include `SessionRepository`, `JsonlSessionStorage`, and
   `test_agent_core_runtime.py`.
 - New package tests normally mirror their source package under `tests/`, for
-  example `lion_code/session_runtime/` -> `tests/session_runtime/` and
-  `lion_code/tui/` -> `tests/tui/`.  Existing root modules may use a matching
+  example `lion_code/session_runtime/` -> `tests/session_runtime/`. Existing
+  root modules may use a matching
   `tests/test_<module>.py` file.
 - Match the local module's typing style.  Current package modules commonly use
   `from __future__ import annotations`, explicit return types, and small
@@ -110,7 +108,7 @@ to provide a shorter import path.
 | Concern | Current example |
 |---|---|
 | Public product API | `lion_code/__init__.py` exports Profiles, `MetaAgent`, `CapabilitySpec`, and Supervisor ports. |
-| Process boundary | `lion_code/__main__.py` parses CLI options, constructs the internal Full product host, and starts the TUI or REPL. |
+| Process boundary | `lion_code/__main__.py` parses CLI options, constructs the internal Full product host, and starts the CLI or REPL. |
 | Application bridge | `lion_code/application/session.py::LionCodingSession._drive` subscribes to Agent events and yields application events. |
 | Tool execution | `lion_code/tooling/runtime.py::ToolRuntime.execute` resolves a registered tool and runs the middleware chain. |
 | Persistence | `lion_code/session_runtime/repository.py::SessionRepository` and `recorder.py::SessionRecorder` split read/replay from append-only writes. |
@@ -122,5 +120,5 @@ to provide a shorter import path.
   directory: none is part of the current architecture.
 - Do not let a frontend, provider, or tool bypass `core/`, `tooling/`, or the
   session runtime to own duplicate message state or persistence.
-- Do not put Textual rendering in `application/` or terminal `print_*` calls in
-  the TUI.  The existing boundaries keep frontends replaceable.
+- Do not put terminal rendering in `application/`; keep it at the CLI/observer
+  boundary so other frontends remain replaceable.

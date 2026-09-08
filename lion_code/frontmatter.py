@@ -40,14 +40,3 @@ def parse_frontmatter(content: str) -> FrontmatterResult:
 
     body = "\n".join(lines[end_idx + 1:]).strip()
     return FrontmatterResult(meta=meta, body=body)
-
-
-def format_frontmatter(meta: dict[str, str], body: str) -> str:
-    """把简单键值元数据和正文序列化为项目约定的 Markdown 格式。"""
-    lines = ["---"]
-    for key, value in meta.items():
-        lines.append(f"{key}: {value}")
-    lines.append("---")
-    lines.append("")
-    lines.append(body)
-    return "\n".join(lines)

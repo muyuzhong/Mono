@@ -20,7 +20,7 @@
 
 ## 产品形态
 
-Lion Code 提供覆盖桌面 GUI、终端 TUI、命令行 CLI 以及 Python SDK 的交互矩阵：
+Lion Code 提供桌面 GUI、命令行 CLI 以及 Python SDK：
 
 ### 1. Electron 桌面客户端（Desktop GUI）
 
@@ -36,25 +36,13 @@ Lion Code 提供覆盖桌面 GUI、终端 TUI、命令行 CLI 以及 Python SDK 
   - Git 审查视图：提供只读的工作区变更审查快照与 Diff 对比，改动一目了然。
   - 内置浏览器：直接呈现 Web 页面与抓取结果。
 
-### 2. Textual 终端 TUI（Terminal GUI）
-
-基于 [Textual](https://textual.textualize.io/) 构建的全屏终端应用，全键盘快捷驱动：
-
-<p align="center">
-  <img src="docs/assets/tui-preview.png" alt="Lion Textual TUI Preview" width="800" />
-</p>
-
-- 快捷键支持：`Ctrl+P` 切换模型，`Ctrl+R` 浏览与恢复会话，`Ctrl+M` 配置 API，`Ctrl+B` 切换侧边栏。
-- 动态补全：按下 `Tab` 键自动补全文件路径、斜杠命令或 Skill 名称。
-- 详见：[`docs/tui.md`](docs/tui.md)。
-
-### 3. Headless CLI 与交互 REPL
+### 2. Headless CLI 与交互 REPL
 
 - 单次执行：`lion-code "任务描述"`，执行完成后自动退出，适配自动化与 CI。
-- 交互 REPL：`lion-code --repl` 启动轻量纯文本交互，支持 `/clear`、`/plan`、`/cost` 等命令。
+- 交互 REPL：`lion-code` 启动轻量纯文本交互，支持 `/clear`、`/plan`、`/cost` 等命令。
 - 只读诊断：在原工作区运行 `lion-code --inspect-session <ID>`，检查历史完整性和工具配对；加 `--json` 输出结构化结果。详见[检查点与诊断](docs/architecture/checkpoint-recovery.md#只读会话诊断)。
 
-### 4. 嵌入式 Python SDK
+### 3. 嵌入式 Python SDK
 
 支持作为标准 Python 库导入并嵌入现有系统：
 
@@ -114,12 +102,10 @@ export OPENAI_API_KEY="sk-..."
 export OPENAI_BASE_URL="https://api.openai.com/v1"
 ```
 
-> 提示：在 TUI 界面中可直接按 `Ctrl+M` 打开图形化面板配置，无需手动设置环境变量。
-
 ### 3. 运行方式
 
 ```bash
-# 启动终端 TUI
+# 启动交互式 REPL
 lion-code
 
 # CLI 单次执行
@@ -220,7 +206,6 @@ Lion-Code/
 │   ├── providers/              # 纯 httpx HTTP Provider（零三方 SDK 依赖）
 │   ├── session_runtime/        # Append-Only JSONL 会话存储与迁移
 │   ├── supervisor.py           # 任务目标调度与 Checkpoint 协调
-│   ├── tui/                    # Textual 终端客户端
 │   └── sidecar.py              # 桌面端 API-only Sidecar 入口
 ├── desktop/                    # Electron + React 19 桌面客户端
 │   ├── src/main/               # 窗口管理与 Sidecar 进程托管
@@ -238,7 +223,7 @@ Lion-Code/
 - [x] 最小 Agent Kernel：异步生成器事件驱动循环与 Provider 解耦
 - [x] 缓存感知长上下文：超大结果落盘、热度感知延迟裁剪与模型自压缩
 - [x] Fail-Closed 安全执行边界：子进程隔离 Hook、出站防护与数据脱敏
-- [x] 多端交互矩阵：Textual 终端 TUI、Headless CLI 与 Electron 桌面客户端
+- [x] 多端交互矩阵：Headless CLI、Python SDK 与 Electron 桌面客户端
 - [x] 桌面工作面板（WorkPanel）：文件资源查看、Git 变更审查快照与内置浏览器
 - [ ] 评测集持续扩展：扩充现实大型仓库重构任务与对抗性用例
 

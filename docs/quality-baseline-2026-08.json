@@ -33,20 +33,6 @@
         "lion_code/tools.py:45:56:E741",
         "lion_code/tools.py:79:9:E741",
         "lion_code/tools.py:81:9:E741",
-        "lion_code/tui/__init__.py:40:11:RUF022",
-        "lion_code/tui/adapter.py:3:1:I001",
-        "lion_code/tui/app.py:270:16:RUF012",
-        "lion_code/tui/app.py:294:16:RUF012",
-        "lion_code/tui/app.py:328:16:RUF012",
-        "lion_code/tui/app.py:437:16:RUF012",
-        "lion_code/tui/app.py:552:16:RUF012",
-        "lion_code/tui/app.py:644:16:RUF012",
-        "lion_code/tui/app.py:742:16:RUF012",
-        "lion_code/tui/prompt_input.py:7:1:I001",
-        "lion_code/tui/state.py:3:1:I001",
-        "lion_code/tui/widgets.py:76:14:RUF012",
-        "lion_code/tui/widgets.py:3:1:I001",
-        "lion_code/ui.py:59:36:E741",
         "tests/benchmarks/test_agent_worker.py:133:32:UP012",
         "tests/benchmarks/test_corpus.py:3:1:I001",
         "tests/benchmarks/test_trace.py:3:1:I001",
@@ -54,13 +40,7 @@
         "tests/session_runtime/test_recorder.py:1:1:I001",
         "tests/test_context_formal_benchmark.py:115:13:RUF021",
         "tests/test_context_formal_benchmark.py:117:16:RUF021",
-        "tests/test_context_formal_benchmark.py:1:1:I001",
-        "tests/tui/test_tui_adapter.py:1:1:I001",
-        "tests/tui/test_tui_themes.py:105:45:RUF043",
-        "tests/tui/test_tui_themes.py:116:45:RUF043",
-        "tests/tui/test_tui_themes.py:139:45:RUF043",
-        "tests/tui/test_tui_themes.py:148:45:RUF043",
-        "tests/tui/test_tui_themes.py:156:45:RUF043"
+        "tests/test_context_formal_benchmark.py:1:1:I001"
       ]
     },
     "ruff_format": {
@@ -97,15 +77,6 @@
         "lion_code/tooling/registry.py",
         "lion_code/tooling/runtime.py",
         "lion_code/tooling/selection.py",
-        "lion_code/tui/adapter.py",
-        "lion_code/tui/app.py",
-        "lion_code/tui/autocomplete.py",
-        "lion_code/tui/file_drop.py",
-        "lion_code/tui/prompt_input.py",
-        "lion_code/tui/state.py",
-        "lion_code/tui/terminal_notification.py",
-        "lion_code/tui/themes/__init__.py",
-        "lion_code/tui/widgets.py",
         "lion_code/ui.py",
         "tests/adapters/test_tool_adapter.py",
         "tests/benchmarks/test_corpus.py",
@@ -140,12 +111,7 @@
         "tests/tooling/test_read_freshness.py",
         "tests/tooling/test_result_policy.py",
         "tests/tooling/test_runtime.py",
-        "tests/tooling/test_skill_registry_view.py",
-        "tests/tui/test_tui_adapter.py",
-        "tests/tui/test_tui_app.py",
-        "tests/tui/test_tui_config.py",
-        "tests/tui/test_tui_file_drop.py",
-        "tests/tui/test_tui_themes.py"
+        "tests/tooling/test_skill_registry_view.py"
       ]
     },
     "mypy": {
@@ -185,20 +151,7 @@
         "lion_code/session_runtime/legacy.py:115:28:arg-type",
         "lion_code/session_runtime/legacy.py:156:28:arg-type",
         "lion_code/session_runtime/legacy.py:185:32:arg-type",
-        "lion_code/tools.py:115:8:var-annotated",
-        "lion_code/tui/app.py:1334:55:attr-defined",
-        "lion_code/tui/app.py:206:11:assignment",
-        "lion_code/tui/app.py:211:24:operator",
-        "lion_code/tui/app.py:213:24:operator",
-        "lion_code/tui/app.py:216:19:return-value",
-        "lion_code/tui/app.py:217:16:operator",
-        "lion_code/tui/app.py:218:11:return-value",
-        "lion_code/tui/app.py:415:12:attr-defined",
-        "lion_code/tui/app.py:419:12:attr-defined",
-        "lion_code/tui/app.py:423:12:attr-defined",
-        "lion_code/tui/app.py:427:12:attr-defined",
-        "lion_code/tui/app.py:863:39:arg-type",
-        "lion_code/ui.py:21:4:union-attr"
+        "lion_code/tools.py:115:8:var-annotated"
       ]
     },
     "radon_complexity": {
@@ -217,9 +170,8 @@
         "lion_code/providers/anthropic.py:154:_AnthropicStreamParser.feed:D:24",
         "lion_code/providers/stream.py:95:canonicalize_provider_stream:D:29",
         "lion_code/session_runtime/legacy.py:123:_anthropic_messages:D:24",
-        "lion_code/tui/adapter.py:24:TuiEventAdapter.apply:D:21",
-        "lion_code/tui/app.py:1039:LionTuiApp._apply_streaming_transcript_event:E:32",
-        "lion_code/__main__.py:222:main:D:25"
+        "lion_code/__main__.py:255:main:D:23",
+        "lion_code/session_runtime/inspection.py:97:inspect_history:D:27"
       ]
     },
     "vulture": {
@@ -231,7 +183,7 @@
         "lion_code/providers/thinking.py:113:unused variable 'provider_kind':100",
         "tests/benchmarks/test_external_anchor.py:65:unused variable 'output_dir':100",
         "tests/test_agent_run.py:68:unsatisfiable 'if' condition:100",
-        "lion_code/__main__.py:179:unused variable 'sig':100"
+        "tests/benchmarks/test_external_anchor.py:66:unused variable 'workers':100"
       ]
     }
   },

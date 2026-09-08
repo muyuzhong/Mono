@@ -22,16 +22,16 @@ The package is split into physical boundaries visible in the directory tree:
   `execution.py` (ExecutionControl), `session_identity.py`
   (SessionIdentityState), and `provider.py` (ProviderController /
   ProviderState).  The Runtime may use Kernel, Context and Tooling, but never
-  Composition, Application or TUI.
+  Composition or Application.
 - **Capability** — `capabilities/`, including the cohesive `agent_state/`,
   `git_status/`, `plan/`, `skill/`, and `subagent/` feature packages.
-  Capabilities never import the Agent engine, Application or TUI.
+  Capabilities never import the Agent engine or Application.
 - **Composition** — `composition/` and `meta_agent.py`; the Composition Root
   knows the Agent Runtime and wires the graph.
 - **Supervisor** — `supervisor.py`, consuming only the public Agent event /
   result / session contracts.
 - **Interfaces** — package root public API, `__main__.py`, `adapters/`,
-  `application/`, and `tui/`. Product-specific frontend delegation lives in
+  `application/`, `server/`, and `sidecar.py`. Product-specific frontend delegation lives in
   `CodingSessionBackendAdapter`; `MetaAgent` remains feature-neutral.
 
 `AgentHarness` at `core/harness.py` is a Kernel stateful-loop wrapper; it is not
@@ -469,12 +469,13 @@ compact/retry policy. The Agent Runtime owns primitive prompt, continuation,
 cancellation, and compaction operations.
 
 The active slash surface contains session/history, provider, Plan, cost,
-compaction, theme, thinking, quit, and Skill commands. Former project-state and
+compaction, thinking, quit, and Skill commands. Former project-state and
 memory-specific command paths are absent. Unknown commands retain the generic
 unknown-command behavior.
 
-The TUI imports application contracts only. The REPL may render terminal output
-but must not own session persistence or a second command dispatcher.
+The CLI and desktop frontends import application contracts only. The REPL may
+render terminal output but must not own session persistence or a second command
+dispatcher.
 
 ## Desktop sidecar access boundary
 
@@ -698,7 +699,7 @@ session repository it delegates to.
 ### 5. Good / Base / Bad Cases
 
 - Good: use `build_profile_agent` for generic runtime consumers and
-  `composition.full_product.build_full_coding_backend` for the application/TUI
+  `composition.full_product.build_full_coding_backend` for the application
   product path.
 - Base: pass injected repository, registry, and confirmation callbacks through
   the factory so the adapter delegates to the same composition graph.
@@ -765,6 +766,6 @@ the PR3 object graph: AgentRuntime and ProviderController never reference each
 other, the Deferred wiring symbols stay deleted, each Runtime owner's mutable
 state stays single-owner, a ContextLayer callback does not reverse-link
 ContextRuntime to CapabilityRegistry, and the runtime package keeps no
-Application/TUI imports. Run focused composition, Capability, context, session,
+Application imports. Run focused composition, Capability, context, session,
 provider, application, and Runtime tests before the full suite, then run
 compile, import linting, residual scans, and the repository quality gates.

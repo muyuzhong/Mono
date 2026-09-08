@@ -13,7 +13,7 @@ Lion-Code 是一个模块化、供应商无关、严格分层的编码 Agent 框
                                       ▼
 +-------------------------------------------------------------------------------+
 |                    Interfaces & Product Adapters 接口适配层                   |
-|   (tui/, server/, sidecar.py, application/, adapters/coding_session_backend)  |
+|   (server/, sidecar.py, application/, adapters/coding_session_backend)        |
 +-------------------------------------------------------------------------------+
                                       │
                                       ▼
@@ -51,9 +51,9 @@ Lion-Code 是一个模块化、供应商无关、严格分层的编码 Agent 框
 |---|---|---|---|
 | **Kernel** | 纯内核 `core/` + 伴生基础设施 `context/`, `tooling/`, `providers/`, `session_runtime/`, `usage.py`, `permission_state.py` | 提供纯粹的 Agent Loop、Harness 状态机、上下文预算/压缩模型、工具执行管道、供应商流式适配与 JSONL 存储格式。其中 `core/` 为最底层纯内核，零依赖上层。 | 禁止导入任何上层运行时；禁止包含 Capability/Supervisor 专属符号。 |
 | **Agent Runtime** | `lion_code/runtime/` | 状态所有权拆分与编排层。划分 `ConversationRuntime`、`SessionRuntime`、`ContextRuntime` 三大 Owner，以及 `AgentRuntime`（编排者）与 `ProviderController`（命令者）。 | `AgentRuntime` 与 `ProviderController` 双向禁止引用；禁止维护第二份消息历史；禁止反向依赖上层。 |
-| **Capabilities** | `lion_code/capabilities/` | 可插拔业务能力层。通过 `CapabilitySpec` SPI 向 Composition 提供工具、ContextLayer、PromptLayer 和会话生命周期钩子。 | 禁止感知 Agent 宿主、Application、TUI、Server；禁止跨 capability 紧耦合。 |
+| **Capabilities** | `lion_code/capabilities/` | 可插拔业务能力层。通过 `CapabilitySpec` SPI 向 Composition 提供工具、ContextLayer、PromptLayer 和会话生命周期钩子。 | 禁止感知 Agent 宿主、Application、Server；禁止跨 capability 紧耦合。 |
 | **Composition** | `lion_code/composition/`, `meta_agent.py` | 组装根与通用外观。汇合 Profile (形态)、AgentConfig (策略) 与 RuntimeBindings (基础设施)，单向拓扑构建对象图并包装为 `MetaAgent`。 | 禁止包含前端逻辑、Supervisor 策略；禁止泄露私有运行时对象。 |
-| **Product / Interfaces** | `lion_code/application/`, `adapters/`, `tui/`, `server/`, `sidecar.py` | 终端/网络/桌面交互界面与产品适配。消费 `application/ports.py` 语义契约，处理终端输出、命令解析、会话枚举与溢出重试。 | 禁止直接持有 Core 私有运行时；禁止直接绕过 Application 接触底层。 |
+| **Product / Interfaces** | `lion_code/application/`, `adapters/`, `server/`, `sidecar.py` | 网络/桌面交互界面与产品适配。消费 `application/ports.py` 语义契约，处理命令解析、会话枚举与溢出重试。 | 禁止直接持有 Core 私有运行时；禁止直接绕过 Application 接触底层。 |
 | **Supervisor** | `lion_code/supervisor.py` | 外部自治控制平面。管理目标生命周期、指数退避重试、JSON 执行控制 Checkpoint 与 Agent 崩溃恢复。 | 严格黑盒化：只通过公开 `AgentPort` 交互，禁止读取 Agent 内部队列与私有字段。 |
 
 ## 最小 Kernel 与可选扩展划分

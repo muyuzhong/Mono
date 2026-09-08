@@ -4,7 +4,7 @@
 - AgentRuntime 与 ProviderController 互不持有（双向禁止）；
 - Deferred* 二段式绑定不复存在；
 - 三个 Runtime Owner 各自的 mutable state 唯一；
-- runtime 包不反向依赖 Application/TUI 等上层。
+- runtime 包不反向依赖 Application 等上层。
 """
 
 from __future__ import annotations
@@ -701,13 +701,13 @@ def test_session_runtime_owns_session_lifecycle_exclusively() -> None:
 
 
 # ---------------------------------------------------------------------------
-# 10. Runtime 包没有 Application/TUI 反向依赖
+# 10. Runtime 包没有 Application 反向依赖
 # ---------------------------------------------------------------------------
 
 
 def test_runtime_package_does_not_import_upper_layers() -> None:
     forbidden = frozenset(
-        {"application", "tui", "composition", "meta_agent", "agent", "supervisor"}
+        {"application", "composition", "meta_agent", "agent", "supervisor"}
     )
     violations: dict[str, set[str]] = {}
     for path in sorted(RUNTIME_DIR.glob("*.py")):

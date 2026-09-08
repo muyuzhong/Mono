@@ -66,11 +66,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--json", action="store_true", help="Print session inspection as JSON"
     )
-    parser.add_argument(
-        "--repl",
-        action="store_true",
-        help="Use the plain REPL instead of the default TUI",
-    )
     parser.add_argument("--max-cost", type=float, default=None, help="Max USD spend")
     parser.add_argument("--max-turns", type=int, default=None, help="Max agentic turns")
     parser.add_argument("--help", "-h", action="store_true", help="Show help")
@@ -80,7 +75,6 @@ def parse_args() -> argparse.Namespace:
     if args.inspect_session and (
         args.prompt
         or args.resume
-        or args.repl
         or args.yolo
         or args.plan
         or args.accept_edits
@@ -108,7 +102,7 @@ def _resolve_permission_mode(args: argparse.Namespace) -> PermissionMode:
 
 
 def _print_repl_skills() -> None:
-    """REPL 的 /skills 展示：与 TUI 共享 skills 发现，只做终端呈现。"""
+    """REPL 的 /skills 展示，只做终端呈现。"""
 
     skills = discover_skills()
     if not skills:
@@ -157,12 +151,8 @@ async def _dispatch_repl_command(
                 print_error(str(e))
     elif result.skills_list_requested:
         _print_repl_skills()
-    elif result.model_picker_requested:
-        print_info("Usage: /model <name>")
-    elif result.resume_session_id is not None or result.resume_picker_requested:
+    elif result.resume_session_id is not None:
         print_info("REPL 不支持 /resume；请用 --resume 启动")
-    elif result.theme is not None or result.theme_picker_requested:
-        print_info("主题仅 TUI 可用")
     elif result.message:
         print_info(result.message)
     return False
@@ -208,7 +198,7 @@ async def run_repl(backend: CodingSessionBackendAdapter) -> None:
 
     sigint_count = 0
 
-    def handle_sigint(sig, frame):
+    def handle_sigint(_sig, _frame):
         nonlocal sigint_count
         # `is_processing` 才表示主 Agent 是否有活动任务；`_output_buffer` 只服务于
         # 子 Agent，不能用它判断主 Agent 是否可中断。
@@ -280,7 +270,6 @@ Options:
   --resume            Resume the last session
   --inspect-session ID  Inspect current-workspace history without running an Agent
   --json              Print inspection as JSON (requires --inspect-session)
-  --repl              Plain REPL instead of the default TUI
   --max-cost USD      Stop when estimated cost exceeds this amount
   --max-turns N       Stop after N agentic turns
   --help, -h          Show this help
@@ -300,7 +289,7 @@ Examples:
   lion-code --max-cost 0.50 --max-turns 20 "实现功能 X"
   OPENAI_API_KEY=sk-xxx lion-code --api-base https://aihubmix.com/v1 --model gpt-4o "hello"
   lion-code --resume
-  lion-code  # 启动 TUI（可先在界面内用 /model 配置 API）
+  lion-code  # 启动交互式 REPL
 """)
         sys.exit(0)
 
@@ -354,17 +343,7 @@ Examples:
         model = creds["model"]
 
     prompt = " ".join(args.prompt) if args.prompt else None
-    use_tui = not prompt and not args.repl
-
-    if use_tui:
-        # 完全未配置凭证时使用 OpenAI-compatible 占位端点，
-        # 由 TUI 承载 /model 首跑配置。
-        if not resolved_api_key and not resolved_use_openai:
-            resolved_use_openai = True
-            resolved_api_base = resolved_api_base or "https://api.openai.com/v1"
-
-    # TUI 允许无凭证启动（进入后在界面配置）；one-shot 与 REPL 仍需预先配置。
-    if not resolved_api_key and not use_tui:
+    if not resolved_api_key:
         print_error(
             "API key is required.\n"
             "  Set ANTHROPIC_API_KEY (+ optional ANTHROPIC_BASE_URL) for Anthropic format,\n"
@@ -385,14 +364,6 @@ Examples:
     if args.plan:
         # Plan 激活是 Plan Capability 命令（PR4 起 Permission 不再有 plan 模式）。
         backend.toggle_plan_mode()
-
-    if use_tui:
-        # TUI 内自带输入循环，one-shot prompt 不适用。
-        from .application.session import LionCodingSession
-        from .tui.app import run_tui_app
-
-        run_tui_app(LionCodingSession(backend=backend), resume=args.resume)
-        return
 
     async def run_cli() -> None:
         if args.resume:

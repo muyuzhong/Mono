@@ -205,9 +205,9 @@ def test_feature_implementations_are_cohesive_and_old_paths_are_deleted() -> Non
     assert not any((SOURCE_ROOT / path).exists() for path in _OLD_FEATURE_PATHS)
 
 
-def test_application_and_tui_do_not_import_harness_directly() -> None:
+def test_application_does_not_import_harness_directly() -> None:
     violations: dict[str, set[str]] = {}
-    for package in ("application", "tui"):
+    for package in ("application",):
         for path in (SOURCE_ROOT / package).rglob("*.py"):
             tree = _tree(path)
             found: set[str] = set()

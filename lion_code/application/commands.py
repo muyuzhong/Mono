@@ -56,18 +56,10 @@ class CommandResult:
 
     handled: bool
     exit_requested: bool = False
-    clear_requested: bool = False
     new_session_requested: bool = False
     compact_summary: str | None = None
     resume_session_id: str | None = None
-    resume_picker_requested: bool = False
-    model_picker_requested: bool = False
-    tools_picker_requested: bool = False
-    scoped_models_picker_requested: bool = False
-    skills_picker_requested: bool = False
-    theme_picker_requested: bool = False
     thinking_level: str | None = None
-    theme: str | None = None
     message: str | None = None
     # Lion 增补:Plan 模式切换与费用显示是 Lion 特有交互,Tau 无对应。
     plan_toggle_requested: bool = False
@@ -151,11 +143,11 @@ class CommandRegistry:
 
 
 def _model_command(ctx: CommandContext) -> CommandResult:
-    """带参数直接切模型;无参数交给前端开 picker。"""
+    """带参数直接切模型；无参数返回命令用法。"""
     if ctx.args:
         ctx.session.set_model(ctx.args)
         return CommandResult(handled=True, message=f"Model set: {ctx.args}")
-    return CommandResult(handled=True, model_picker_requested=True)
+    return CommandResult(handled=True, message="Usage: /model <name>")
 
 
 def _thinking_command(ctx: CommandContext) -> CommandResult:
@@ -204,7 +196,7 @@ def _skills_command(_ctx: CommandContext) -> CommandResult:
 
 
 def create_default_command_registry() -> CommandRegistry:
-    """注册 Lion 内置 TUI 命令;全部以 CommandResult 意图返回,由前端执行。"""
+    """注册 Lion 内置命令；全部以 CommandResult 意图返回，由前端执行。"""
     registry = CommandRegistry()
     for command in (
         SlashCommand(
@@ -264,17 +256,10 @@ def create_default_command_registry() -> CommandRegistry:
             handler=lambda ctx: (
                 CommandResult(handled=True, resume_session_id=ctx.args)
                 if ctx.args
-                else CommandResult(handled=True, resume_picker_requested=True)
-            ),
-        ),
-        SlashCommand(
-            name="theme",
-            description="切换 TUI 主题",
-            usage="/theme <name>",
-            handler=lambda ctx: (
-                CommandResult(handled=True, theme=ctx.args)
-                if ctx.args
-                else CommandResult(handled=True, theme_picker_requested=True)
+                else CommandResult(
+                    handled=True,
+                    message="REPL 不支持 /resume；请用 --resume 启动",
+                )
             ),
         ),
     ):

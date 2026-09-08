@@ -64,7 +64,6 @@ _FORBIDDEN_IMPORTS = (
     "lion_code.providers",
     "lion_code.session_runtime",
     "lion_code.application",
-    "lion_code.tui",
     "lion_code.capabilities",
     "lion_code.capabilities.plan.runtime",
     "lion_code.capabilities.skill.runtime",

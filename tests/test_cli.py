@@ -94,8 +94,9 @@ def test_inspection_missing_has_nonzero_exit_without_creating_state(
     assert not (tmp_path / "absent").exists()
 
 
-def test_legacy_tui_option_is_rejected(monkeypatch) -> None:
-    monkeypatch.setattr(sys, "argv", ["lion-code", "--legacy-tui"])
+@pytest.mark.parametrize("option", ["--legacy-tui", "--repl"])
+def test_removed_tui_options_are_rejected(monkeypatch, option) -> None:
+    monkeypatch.setattr(sys, "argv", ["lion-code", option])
 
     with pytest.raises(SystemExit):
         parse_args()
@@ -109,7 +110,7 @@ def test_removed_web_options_are_rejected(monkeypatch, option) -> None:
         parse_args()
 
 
-def test_help_describes_default_tui_without_legacy_option(monkeypatch, capsys) -> None:
+def test_help_describes_default_repl_without_tui_option(monkeypatch, capsys) -> None:
     monkeypatch.setattr(sys, "argv", ["lion-code", "--help"])
 
     with pytest.raises(SystemExit) as exit_info:
@@ -117,12 +118,13 @@ def test_help_describes_default_tui_without_legacy_option(monkeypatch, capsys) -
 
     assert exit_info.value.code == 0
     output = capsys.readouterr().out
-    assert "启动 TUI" in output
+    assert "启动交互式 REPL" in output
     assert "Enable extended thinking for supported models" in output
     assert "--web" not in output
     assert "--port" not in output
     assert "--no-browser" not in output
     assert "--legacy-tui" not in output
+    assert "--repl" not in output
 
 
 def test_permission_mode_precedence_is_explicit() -> None:
@@ -259,9 +261,13 @@ async def test_repl_dispatch_exit_returns_true() -> None:
         (_result(cost_requested=True), ["show_cost"], ""),
         (_result(compact_summary=""), ["compact"], ""),
         (_result(skill_prompt="use the skill"), ["chat:use the skill"], ""),
-        (_result(model_picker_requested=True), [], "Usage: /model"),
+        (_result(message="Usage: /model <name>"), [], "Usage: /model"),
         (_result(resume_session_id="abc"), [], "不支持 /resume"),
-        (_result(theme="dark"), [], "主题仅 TUI 可用"),
+        (
+            _result(message="REPL 不支持 /resume；请用 --resume 启动"),
+            [],
+            "不支持 /resume",
+        ),
         (_result(message="hello notice"), [], "hello notice"),
     ],
 )

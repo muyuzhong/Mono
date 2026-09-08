@@ -10,5 +10,5 @@
 - ``provider`` -- ProviderController：ProviderState 与 Provider 配置命令；
 - ``execution`` / ``session_identity`` -- 取消令牌与会话标识。
 
-这些模块不向上依赖 Composition/Application/TUI。
+这些模块不向上依赖 Composition 或 Application。
 """

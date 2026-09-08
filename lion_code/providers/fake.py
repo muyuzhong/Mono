@@ -1,7 +1,7 @@
 """确定性回放的测试用 Provider。
 
 按预置事件流逐次响应 `stream_response`,并记录每次调用的入参,
-供应用层/TUI 测试在不接真实后端的情况下驱动完整 Agent 闭环。
+供应用层测试在不接真实后端的情况下驱动完整 Agent 闭环。
 """
 
 from __future__ import annotations

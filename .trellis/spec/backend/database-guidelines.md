@@ -74,7 +74,7 @@ await recorder.record_message(message)
 
 - Writing a monolithic `.json` snapshot for a new session or treating the legacy
   reader as a second live writer.
-- Bypassing `SessionRecorder` from the TUI, provider, or a sub-agent and thereby
+- Bypassing `SessionRecorder` from a frontend, provider, or a sub-agent and thereby
   breaking entry ordering or session replay.
 - Rewriting a legacy file during migration; it is the user's rollback copy.
 - Parsing JSONL without the canonical `entry_from_json_line` decoder and

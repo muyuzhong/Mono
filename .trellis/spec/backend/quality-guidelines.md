@@ -32,7 +32,7 @@
   Anthropic endpoint.
 - Test directories normally mirror production packages: `tests/application/`,
   `tests/core/`, `tests/providers/`, `tests/session_runtime/`, `tests/tooling/`,
-  and `tests/tui/`.
+  and `tests/server/`.
 
 ## Required validation for a change
 
