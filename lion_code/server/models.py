@@ -129,6 +129,9 @@ class ServerStatusResponse(BaseModel):
     available_thinking_levels: list[str]
     input_tokens: int = 0
     output_tokens: int = 0
+    cache_read_tokens: int = 0
+    cache_write_tokens: int = 0
+    cache_hit_rate: float = 0.0
     is_running: bool = False
 
 

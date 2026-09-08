@@ -40,6 +40,7 @@ export function DesktopSidebar({
   onRenameSession,
   onSelectSkill,
   onOpenSettings,
+  isSettingsOpen = false,
   onToggleTheme,
   onDisconnect,
   onCollapse,
@@ -60,6 +61,7 @@ export function DesktopSidebar({
   onRenameSession: (sessionId: string, label: string) => Promise<boolean>;
   onSelectSkill: (skillName: string) => void;
   onOpenSettings: () => void;
+  isSettingsOpen?: boolean;
   onToggleTheme: () => void;
   onDisconnect: () => void;
   onCollapse: () => void;
@@ -131,7 +133,7 @@ export function DesktopSidebar({
         </details>
 
         <footer className="sidebar-footer">
-          <button type="button" aria-label="打开设置" onClick={onOpenSettings}><Settings aria-hidden="true" size={16} /></button>
+          <button type="button" className={isSettingsOpen ? "active" : ""} aria-label="打开模型设置" aria-current={isSettingsOpen ? "page" : undefined} onClick={onOpenSettings}><Settings aria-hidden="true" size={16} /></button>
           <button type="button" aria-label="切换工作区" onClick={onDisconnect}><FolderOpen aria-hidden="true" size={16} /></button>
           <details className="sidebar-notifications"><summary aria-label="通知"><Bell aria-hidden="true" size={16} /></summary><div><strong>暂无通知</strong><span>新的运行提醒会显示在这里。</span></div></details>
           <button type="button" aria-label={`切换到${theme === "dark" ? "浅色" : "深色"}主题`} onClick={onToggleTheme}>{theme === "dark" ? <Sun aria-hidden="true" size={16} /> : <Moon aria-hidden="true" size={16} />}</button>
