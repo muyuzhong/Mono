@@ -6,13 +6,10 @@ from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Literal, Protocol
 
+from ..core.types import JSONValue
+
 if TYPE_CHECKING:
     from .context import ToolContext
-
-
-type JSONValue = (
-    bool | int | float | str | list[JSONValue] | dict[str, JSONValue] | None
-)
 
 
 @dataclass(frozen=True, slots=True)

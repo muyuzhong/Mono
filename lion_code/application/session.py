@@ -26,7 +26,8 @@ from typing import TYPE_CHECKING, Any, Literal
 from lion_code.core.events import AgentEndEvent, AgentEvent, MessageEndEvent
 from lion_code.core.messages import AgentMessage, AssistantMessage
 
-from .commands import CommandRegistry, CommandResult, create_default_command_registry
+from .commands import CommandResult
+from .commands import handle_command as dispatch_command
 from .events import (
     AgentSettledEvent,
     AutoRetryEndEvent,
@@ -82,7 +83,6 @@ class LionCodingSession:
         self._backend = backend
         self._backend.set_terminal_output(terminal_output)
         self._running = False
-        self._command_registry = create_default_command_registry()
         self._skills_cache: tuple[Skill, ...] | None = None
 
     # ─── 环境 / 身份 ─────────────────────────────────────────
@@ -283,12 +283,8 @@ class LionCodingSession:
 
     # ─── 命令 ────────────────────────────────────────────────
 
-    @property
-    def command_registry(self) -> CommandRegistry:
-        return self._command_registry
-
     def handle_command(self, text: str) -> CommandResult:
-        return self._command_registry.execute(self, text)
+        return dispatch_command(self, text)
 
     # ─── Lion 特有交互(权限确认 / Plan 审批)─────────────────
 

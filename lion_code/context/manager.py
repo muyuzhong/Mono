@@ -6,7 +6,6 @@ import posixpath
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from time import time
-from typing import Protocol
 
 from lion_code.context.estimator import estimate_messages_tokens
 from lion_code.context.policy import ContextPolicy
@@ -17,6 +16,7 @@ from lion_code.context.projector import (
 )
 from lion_code.context.types import (
     ContextAction,
+    ContextLayer,
     ContextRuntimeState,
     ContextView,
     PreparedContext,
@@ -32,16 +32,7 @@ from lion_code.core.messages import (
 IsSnippableTool = Callable[[str], bool]
 
 
-class _ContextLayer(Protocol):
-    """Composition 注入 Kernel context 的结构化回调边界。"""
-
-    @property
-    def layer_id(self) -> str: ...
-
-    def render(self, view: ContextView) -> str: ...
-
-
-ContextLayerCallback = Callable[[], Sequence[_ContextLayer]]
+ContextLayerCallback = Callable[[], Sequence[ContextLayer]]
 
 
 @dataclass(frozen=True, slots=True)
