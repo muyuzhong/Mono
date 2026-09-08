@@ -5,9 +5,7 @@ from __future__ import annotations
 import unittest
 from unittest.mock import patch
 
-from lion_code.application.commands import (
-    create_default_command_registry,
-)
+from lion_code.application.commands import handle_command
 from lion_code.capabilities.skill.discovery import SkillDefinition
 
 
@@ -46,7 +44,9 @@ class _FakeSession:
     system_prompt = ""
     session_id: str | None = None
 
-    def set_model(self, model: str) -> None: ...
+    def set_model(self, model: str) -> None:
+        self.model = model
+
     def set_thinking_level(self, level: str) -> str:
         return level
 
@@ -56,49 +56,43 @@ class _FakeSession:
 
 class TestSkillFallback(unittest.TestCase):
     def test_unknown_command_without_matching_skill_returns_unhandled(self) -> None:
-        registry = create_default_command_registry()
         with patch(
             "lion_code.capabilities.skill.discovery.get_skill_by_name",
             return_value=None,
         ):
-            result = registry.execute(_FakeSession(), "/nonexistent")
+            result = handle_command(_FakeSession(), "/nonexistent")
         self.assertFalse(result.handled)
 
     def test_removed_command_is_not_registered(self) -> None:
         """未命中 Skill 的命令保留通用 unknown-command 结果。"""
-        registry = create_default_command_registry()
-        self.assertIsNone(registry.get("removed-command"))
         with patch(
             "lion_code.capabilities.skill.discovery.get_skill_by_name",
             return_value=None,
         ):
-            result = registry.execute(_FakeSession(), "/removed-command")
+            result = handle_command(_FakeSession(), "/removed-command")
         self.assertFalse(result.handled)
 
     def test_inline_skill_fallback_returns_resolved_prompt(self) -> None:
-        registry = create_default_command_registry()
         skill = _fake_skill()
         with patch(
             "lion_code.capabilities.skill.discovery.get_skill_by_name",
             return_value=skill,
         ):
-            result = registry.execute(_FakeSession(), "/test-skill hello world")
+            result = handle_command(_FakeSession(), "/test-skill hello world")
         self.assertTrue(result.handled)
         self.assertIsNotNone(result.skill_prompt)
         self.assertIn("Execute: hello world", result.skill_prompt)
 
     def test_non_user_invocable_skill_returns_unhandled(self) -> None:
-        registry = create_default_command_registry()
         skill = _fake_skill(user_invocable=False)
         with patch(
             "lion_code.capabilities.skill.discovery.get_skill_by_name",
             return_value=skill,
         ):
-            result = registry.execute(_FakeSession(), "/test-skill")
+            result = handle_command(_FakeSession(), "/test-skill")
         self.assertFalse(result.handled)
 
     def test_fork_skill_fallback_returns_tool_invoke_prompt(self) -> None:
-        registry = create_default_command_registry()
         skill = _fake_skill(context="fork")
         with (
             patch(
@@ -112,16 +106,45 @@ class TestSkillFallback(unittest.TestCase):
                 "allowed_tools": None,
                 "context": "fork",
             }
-            result = registry.execute(_FakeSession(), "/test-skill do thing")
+            result = handle_command(_FakeSession(), "/test-skill do thing")
         self.assertTrue(result.handled)
         self.assertIn("skill tool", result.skill_prompt)
         self.assertIn("test-skill", result.skill_prompt)
 
     def test_skills_command_returns_skills_list_requested(self) -> None:
-        registry = create_default_command_registry()
-        result = registry.execute(_FakeSession(), "/skills")
+        result = handle_command(_FakeSession(), "/skills")
         self.assertTrue(result.handled)
         self.assertTrue(result.skills_list_requested)
+
+    def test_fixed_commands_dispatch_without_registry(self) -> None:
+        session = _FakeSession()
+
+        result = handle_command(session, "/model test-model")
+        self.assertEqual(result.message, "Model set: test-model")
+        self.assertEqual(session.model, "test-model")
+
+        result = handle_command(session, "/model")
+        self.assertEqual(result.message, "Usage: /model <name>")
+
+        result = handle_command(session, "/thinking high")
+        self.assertEqual(result.message, "Thinking: high")
+
+        result = handle_command(session, "/thinking")
+        self.assertEqual(result.message, "Thinking: off")
+
+        result = handle_command(session, "/compact keep this")
+        self.assertEqual(result.compact_summary, "keep this")
+
+        result = handle_command(session, "/resume session-1")
+        self.assertEqual(result.resume_session_id, "session-1")
+
+        result = handle_command(session, "/resume")
+        self.assertIn("不支持 /resume", result.message)
+
+    def test_non_command_input_remains_unhandled(self) -> None:
+        for text in ("ordinary prompt", "/"):
+            with self.subTest(text=text):
+                self.assertFalse(handle_command(_FakeSession(), text).handled)
 
 
 if __name__ == "__main__":

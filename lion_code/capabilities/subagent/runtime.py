@@ -65,13 +65,9 @@ class SubagentExecutor:
     ) -> ToolResult:
         """执行 ``agent`` 工具传入的一个子任务。"""
 
-        agent_type = _string_argument(arguments, "type", "general")
-        description = _string_argument(
-            arguments,
-            "description",
-            "sub-agent task",
-        )
-        prompt = _string_argument(arguments, "prompt", "")
+        agent_type = str(arguments.get("type", "general"))
+        description = str(arguments.get("description", "sub-agent task"))
+        prompt = str(arguments.get("prompt", ""))
         return await self.execute(
             agent_type=agent_type,
             description=description,
@@ -162,12 +158,3 @@ class SubagentExecutor:
         started: bool,
     ) -> None:
         del agent_type, description, started
-
-
-def _string_argument(
-    arguments: Mapping[str, JSONValue],
-    name: str,
-    default: str,
-) -> str:
-    value = arguments.get(name, default)
-    return value if isinstance(value, str) else str(value)

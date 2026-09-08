@@ -21,8 +21,8 @@ class SkillRuntime:
     ) -> ToolResult:
         """执行一次 Skill 工具调用并返回结构化结果。"""
 
-        skill_name = _string_argument(arguments, "skill_name", "")
-        args = _string_argument(arguments, "args", "")
+        skill_name = str(arguments.get("skill_name", ""))
+        args = str(arguments.get("args", ""))
         result = discovery.execute_skill(skill_name, args)
         if not result:
             return ToolResult(content=f"Unknown skill: {skill_name}")
@@ -39,12 +39,3 @@ class SkillRuntime:
         return ToolResult(
             content=f'[Skill "{skill_name}" activated]\n\n{prompt}',
         )
-
-
-def _string_argument(
-    arguments: Mapping[str, JSONValue],
-    name: str,
-    default: str,
-) -> str:
-    value = arguments.get(name, default)
-    return value if isinstance(value, str) else str(value)

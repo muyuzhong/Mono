@@ -1,47 +1,14 @@
-"""Slash 命令注册表(vendored 自 tau_coding/commands.py 的结构部分)。
-
-阶段 2 只迁入数据结构与注册/解析/执行骨架;Lion 内置命令集
-(/clear /plan /cost /compact /model …)按迁移计划在阶段 3 注册。
-``CommandResult`` 只保留当前实现 set/read 的意图标志。
-"""
+"""Application slash-command parsing and dispatch."""
 
 from __future__ import annotations
 
-from collections.abc import Callable, Sequence
+from collections.abc import Callable
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Protocol
-
-from .skills import Skill
 
 
 class CommandSession(Protocol):
-    """Session attributes available to slash-command handlers.
-
-    与 Tau 的差异:去掉 session_manager/available_providers 等尚未在
-    Lion 落地的成员,阶段 3/4 随 LionCodingSession 扩展补齐。
-    """
-
-    @property
-    def cwd(self) -> Path: ...
-
-    @property
-    def model(self) -> str: ...
-
-    @property
-    def provider_name(self) -> str: ...
-
-    @property
-    def skills(self) -> Sequence[Skill]: ...
-
-    @property
-    def thinking_level(self) -> str: ...
-
-    @property
-    def available_thinking_levels(self) -> Sequence[str]: ...
-
-    @property
-    def session_id(self) -> str | None: ...
+    """Slash handlers only need the session mutations they can issue."""
 
     def set_model(self, model: str) -> None: ...
 
@@ -59,119 +26,56 @@ class CommandResult:
     new_session_requested: bool = False
     compact_summary: str | None = None
     resume_session_id: str | None = None
-    thinking_level: str | None = None
     message: str | None = None
-    # Lion 增补:Plan 模式切换与费用显示是 Lion 特有交互,Tau 无对应。
     plan_toggle_requested: bool = False
     cost_requested: bool = False
     skills_list_requested: bool = False
     skill_prompt: str | None = None
 
 
-@dataclass(frozen=True, slots=True)
-class CommandContext:
-    """Runtime context passed to slash-command handlers."""
-
-    session: CommandSession
-    registry: CommandRegistry
-    text: str
-    name: str
-    args: str
+CommandHandler = Callable[[CommandSession, str], CommandResult]
 
 
-CommandHandler = Callable[[CommandContext], CommandResult]
-
-
-@dataclass(frozen=True, slots=True)
-class SlashCommand:
-    """A registered slash command and its user-facing metadata."""
-
-    name: str
-    description: str
-    usage: str
-    handler: CommandHandler
-    aliases: tuple[str, ...] = ()
-    search_terms: tuple[str, ...] = ()
-
-
-class CommandRegistry:
-    """Parse, register, list, and execute slash commands."""
-
-    def __init__(self) -> None:
-        self._commands: dict[str, SlashCommand] = {}
-        self._aliases: dict[str, str] = {}
-
-    def register(self, command: SlashCommand) -> None:
-        """Register a slash command and its aliases."""
-        name = _normalize_name(command.name)
-        if name in self._commands:
-            raise ValueError(f"Duplicate slash command: /{name}")
-        self._commands[name] = command
-        for alias in command.aliases:
-            normalized_alias = _normalize_name(alias)
-            if normalized_alias in self._commands or normalized_alias in self._aliases:
-                raise ValueError(f"Duplicate slash command alias: /{normalized_alias}")
-            self._aliases[normalized_alias] = name
-
-    def get(self, name: str) -> SlashCommand | None:
-        """Return a command by name or alias."""
-        normalized = _normalize_name(name)
-        command_name = self._aliases.get(normalized, normalized)
-        return self._commands.get(command_name)
-
-    def list_commands(self) -> tuple[SlashCommand, ...]:
-        """Return registered commands sorted by name."""
-        return tuple(self._commands[name] for name in sorted(self._commands))
-
-    def execute(self, session: CommandSession, text: str) -> CommandResult:
-        """Execute a slash command, or return unhandled for ordinary prompts."""
-        stripped = text.strip()
-        if not stripped.startswith("/"):
-            return CommandResult(handled=False)
-
-        name, args = _parse_command(stripped)
-        if not name:
-            return CommandResult(handled=False)
-
-        command = self.get(name)
-        if command is None:
-            return _try_skill_fallback(name, args)
-
-        return command.handler(
-            CommandContext(session=session, registry=self, text=stripped, name=name, args=args)
-        )
-
-
-def _model_command(ctx: CommandContext) -> CommandResult:
+def _model_command(session: CommandSession, args: str) -> CommandResult:
     """带参数直接切模型；无参数返回命令用法。"""
-    if ctx.args:
-        ctx.session.set_model(ctx.args)
-        return CommandResult(handled=True, message=f"Model set: {ctx.args}")
+    if args:
+        session.set_model(args)
+        return CommandResult(handled=True, message=f"Model set: {args}")
     return CommandResult(handled=True, message="Usage: /model <name>")
 
 
-def _thinking_command(ctx: CommandContext) -> CommandResult:
-    """带参数设定 thinking 档位;无参数循环到下一档。"""
-    if ctx.args:
-        level = ctx.session.set_thinking_level(ctx.args)
-    else:
-        level = ctx.session.cycle_thinking_level()
-    return CommandResult(handled=True, thinking_level=level, message=f"Thinking: {level}")
+def _thinking_command(session: CommandSession, args: str) -> CommandResult:
+    """带参数设定 thinking 档位；无参数循环到下一档。"""
+    level = session.set_thinking_level(args) if args else session.cycle_thinking_level()
+    return CommandResult(handled=True, message=f"Thinking: {level}")
+
+
+def _compact_command(_session: CommandSession, args: str) -> CommandResult:
+    return CommandResult(handled=True, compact_summary=args)
+
+
+def _resume_command(_session: CommandSession, args: str) -> CommandResult:
+    if args:
+        return CommandResult(handled=True, resume_session_id=args)
+    return CommandResult(
+        handled=True,
+        message="REPL 不支持 /resume；请用 --resume 启动",
+    )
+
+
+def _skills_command(_session: CommandSession, _args: str) -> CommandResult:
+    """返回 /skills 的展示意图。"""
+    return CommandResult(handled=True, skills_list_requested=True)
 
 
 def _try_skill_fallback(name: str, args: str) -> CommandResult:
-    """未命中内置命令时，按 ``/<skill-name> [args]`` 尝试解析用户可调用 Skill。
-
-    与 REPL ``__main__.py`` 的 fallback 逻辑一致：
-    - ``inline`` Skill 直接把解析后的提示词交给 ``agent.chat``；
-    - ``fork`` Skill 改用 skill 工具调用入口。
-    """
+    """未命中内置命令时，按 ``/<skill-name> [args]`` 解析用户 Skill。"""
 
     from lion_code.capabilities.skill.discovery import (
-    execute_skill,
-    get_skill_by_name,
-    resolve_skill_prompt,
-)
+        execute_skill,
+        get_skill_by_name,
+        resolve_skill_prompt,
+    )
 
     skill = get_skill_by_name(name)
     if skill is None or not skill.user_invocable:
@@ -181,90 +85,50 @@ def _try_skill_fallback(name: str, args: str) -> CommandResult:
         if result is None:
             return CommandResult(handled=False)
         prompt = (
-            f'Use the skill tool to invoke "{skill.name}" with args: '
-            f'{args or "(none)"}'
+            f'Use the skill tool to invoke "{skill.name}" with args: {args or "(none)"}'
         )
     else:
         prompt = resolve_skill_prompt(skill, args)
     return CommandResult(handled=True, skill_prompt=prompt)
 
 
-def _skills_command(_ctx: CommandContext) -> CommandResult:
-    """/skills 列出可用 Skill。"""
+_STATIC_COMMANDS: dict[str, CommandResult | CommandHandler] = {
+    "quit": CommandResult(handled=True, exit_requested=True),
+    "exit": CommandResult(handled=True, exit_requested=True),
+    "clear": CommandResult(handled=True, new_session_requested=True),
+    "new": CommandResult(handled=True, new_session_requested=True),
+    "plan": CommandResult(handled=True, plan_toggle_requested=True),
+    "cost": CommandResult(handled=True, cost_requested=True),
+    "skills": _skills_command,
+}
 
-    return CommandResult(handled=True, skills_list_requested=True)
+_COMMAND_HANDLERS: dict[str, CommandHandler] = {
+    "compact": _compact_command,
+    "model": _model_command,
+    "thinking": _thinking_command,
+    "resume": _resume_command,
+}
 
 
-def create_default_command_registry() -> CommandRegistry:
-    """注册 Lion 内置命令；全部以 CommandResult 意图返回，由前端执行。"""
-    registry = CommandRegistry()
-    for command in (
-        SlashCommand(
-            name="quit",
-            description="退出 Lion Code",
-            usage="/quit",
-            handler=lambda _ctx: CommandResult(handled=True, exit_requested=True),
-            aliases=("exit",),
-        ),
-        SlashCommand(
-            name="clear",
-            description="清空对话并开始新会话",
-            usage="/clear",
-            handler=lambda _ctx: CommandResult(handled=True, new_session_requested=True),
-            aliases=("new",),
-        ),
-        SlashCommand(
-            name="plan",
-            description="切换 Plan 模式",
-            usage="/plan",
-            handler=lambda _ctx: CommandResult(handled=True, plan_toggle_requested=True),
-        ),
-        SlashCommand(
-            name="cost",
-            description="显示本会话用量与费用",
-            usage="/cost",
-            handler=lambda _ctx: CommandResult(handled=True, cost_requested=True),
-        ),
-        SlashCommand(
-            name="compact",
-            description="压缩当前上下文",
-            usage="/compact",
-            handler=lambda ctx: CommandResult(handled=True, compact_summary=ctx.args),
-        ),
-        SlashCommand(
-            name="skills",
-            description="列出可用 Skill",
-            usage="/skills",
-            handler=_skills_command,
-        ),
-        SlashCommand(
-            name="model",
-            description="切换模型 / 配置 API",
-            usage="/model [name]",
-            handler=_model_command,
-        ),
-        SlashCommand(
-            name="thinking",
-            description="切换 thinking 档位",
-            usage="/thinking [low|medium|high|max]",
-            handler=_thinking_command,
-        ),
-        SlashCommand(
-            name="resume",
-            description="恢复历史会话",
-            usage="/resume [session-id]",
-            handler=lambda ctx: (
-                CommandResult(handled=True, resume_session_id=ctx.args)
-                if ctx.args
-                else CommandResult(
-                    handled=True,
-                    message="REPL 不支持 /resume；请用 --resume 启动",
-                )
-            ),
-        ),
-    ):
-        registry.register(command)
-    return registry
+def handle_command(session: CommandSession, text: str) -> CommandResult:
+    """Execute a fixed slash command or fall back to a user-invocable Skill."""
+    stripped = text.strip()
+    if not stripped.startswith("/"):
+        return CommandResult(handled=False)
+
+    name, args = _parse_command(stripped)
+    if not name:
+        return CommandResult(handled=False)
+
+    command = _STATIC_COMMANDS.get(name)
+    if isinstance(command, CommandResult):
+        return command
+    if command is not None:
+        return command(session, args)
+    handler = _COMMAND_HANDLERS.get(name)
+    if handler is not None:
+        return handler(session, args)
+    return _try_skill_fallback(name, args)
 
 
 def _parse_command(text: str) -> tuple[str, str]:

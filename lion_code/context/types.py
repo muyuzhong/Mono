@@ -6,7 +6,7 @@ import json
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Literal
+from typing import Literal, Protocol
 
 from lion_code.core.messages import (
     AgentMessage,
@@ -28,6 +28,15 @@ MAX_TOOL_ARGUMENT_SUMMARY_CHARS = 240
 MAX_FAILURE_SUMMARY_CHARS = 240
 _TOOL_ACTIVITY_LIMIT = 3
 _TOOL_ACTIVITY_SCAN_LIMIT = 64
+
+
+class ContextLayer(Protocol):
+    """向 prepared context 提供每次请求的临时状态。"""
+
+    @property
+    def layer_id(self) -> str: ...
+
+    def render(self, view: ContextView) -> str: ...
 
 
 @dataclass(frozen=True, slots=True)

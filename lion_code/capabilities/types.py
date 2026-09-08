@@ -12,8 +12,9 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Protocol
 
+from lion_code.context.types import ContextLayer
+
 if TYPE_CHECKING:
-    from lion_code.context.types import ContextView
     from lion_code.tooling.types import LionTool
 
 
@@ -51,20 +52,6 @@ class PromptLayer(Protocol):
     def layer_id(self) -> str: ...
 
     def render(self) -> str: ...
-
-
-class ContextLayer(Protocol):
-    """向 prepared context 提供每次请求的临时状态。
-
-    ``PromptLayer`` 贡献相对稳定的 System Prompt 内容；``ContextLayer``
-    在每次 Provider 请求前渲染当前状态，结果只保留在本次 prepared
-    context 中，不得进入 canonical conversation history 或持久化 Session。
-    """
-
-    @property
-    def layer_id(self) -> str: ...
-
-    def render(self, view: ContextView) -> str: ...
 
 
 class SessionParticipant(Protocol):

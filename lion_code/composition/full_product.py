@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
 from pathlib import Path
-from typing import Any
 
 from ..adapters.coding_session_backend import CodingSessionBackendAdapter
 from ..hooks import load_pre_tool_use_hooks
@@ -34,16 +33,8 @@ from . import (
 )
 
 
-def _full_provider_factory(**kwargs: Any):
-    return create_provider(**kwargs)
-
-
 def _full_dynamic_context_builder(names) -> str:
     return build_dynamic_system_context(list(names))
-
-
-def _full_terminal_renderer_factory() -> TerminalRenderer:
-    return TerminalRenderer()
 
 
 def build_full_coding_backend(
@@ -77,7 +68,7 @@ def build_full_coding_backend(
     )
     bindings = RuntimeBindings(
         provider=ProviderBindings(
-            provider_factory=_full_provider_factory,
+            provider_factory=create_provider,
         ),
         session=SessionBindings(
             session_repository=session_repository,
@@ -89,7 +80,7 @@ def build_full_coding_backend(
         interaction=InteractionBindings(
             confirm_fn=confirm_fn,
             dynamic_system_context_builder=_full_dynamic_context_builder,
-            terminal_renderer_factory=_full_terminal_renderer_factory,
+            terminal_renderer_factory=TerminalRenderer,
             print_info=print_info,
             print_error=print_error,
             print_confirmation=print_confirmation,
