@@ -17,11 +17,9 @@ _SUPERVISOR = BOUNDARIES[1]
 _COMPOSITION = BOUNDARIES[2]
 _META_AGENT = BOUNDARIES[3]
 _PROVIDERS = BOUNDARIES[4]
-_APPLICATION = BOUNDARIES[5]
-_TUI = BOUNDARIES[6]
-_SERVER = BOUNDARIES[7]
-_CAPABILITIES = BOUNDARIES[8]
-_PRODUCTION = BOUNDARIES[9]
+_SERVER = BOUNDARIES[5]
+_CAPABILITIES = BOUNDARIES[6]
+_PRODUCTION = BOUNDARIES[7]
 
 LEGACY_MESSAGE_SYMBOLS = frozenset({"_anthropic_messages", "_openai_messages"})
 HARNESS_MUTATION_METHODS = frozenset({"clear_queues", "follow_up", "replace_messages"})
@@ -1019,15 +1017,6 @@ def test_provider_product_imports_are_core_or_local() -> None:
     assert not violations, f"Provider crossed its Core boundary: {violations}"
 
 
-def test_tui_runtime_imports_stay_within_event_boundary() -> None:
-    violations = _unexpected_imports(
-        _source_files("tui"),
-        allowed=_TUI.allowed_roots,
-    )
-
-    assert not violations, f"TUI bypassed application/core events: {violations}"
-
-
 def test_server_runtime_imports_stay_within_event_boundary() -> None:
     violations = _unexpected_imports(
         _source_files("server"),
@@ -1043,10 +1032,7 @@ def test_capabilities_do_not_import_agent_host_or_frontend() -> None:
         forbidden=_CAPABILITIES.forbidden_roots,
     )
 
-    assert not violations, (
-        f"Capability SPI must not depend on Agent host / Application / TUI: "
-        f"{violations}"
-    )
+    assert not violations, f"Capability SPI must not depend on Agent host / Application: {violations}"
 
 
 _CAPABILITY_ANTIPATTERN_SYMBOLS = frozenset(

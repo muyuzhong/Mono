@@ -9,9 +9,9 @@ boundaries, not historical implementation or future Memory design.
 | --- | --- | --- |
 | Kernel | `core/`, `context/`, `tooling/`, `providers/`, `session_runtime/`, `permission_state.py`, `usage.py` | Product capabilities, Agent Runtime state, frontend state, project feature stores |
 | Agent Runtime | `runtime/` (`agent.py`, `conversation.py`, `session.py`, `context.py`, `execution.py`, `session_identity.py`, `provider.py`) | Profile selection, a second history, service locator, deleted legacy graph, Composition/Application deps |
-| Capability | `capabilities/` and its cohesive feature packages | Provider/session ownership, Product Adapter, Application/TUI, legacy Memory/Dream/Learning object graphs |
+| Capability | `capabilities/` and its cohesive feature packages | Provider/session ownership, Product Adapter, Application, legacy Memory/Dream/Learning object graphs |
 | Composition | `composition/`, `meta_agent.py` | Frontend behavior, Supervisor policy, retained runtime container, feature API leakage |
-| Interfaces | `__init__.py`, `__main__.py`, `sidecar.py`, `adapters/`, `application/`, `tui/` | Direct Kernel/Agent Runtime ownership, duplicate persistence, public legacy feature facade |
+| Interfaces | `__init__.py`, `__main__.py`, `sidecar.py`, `adapters/`, `application/`, `server/` | Direct Kernel/Agent Runtime ownership, duplicate persistence, public legacy feature facade |
 | Supervisor | `supervisor.py` | Agent content, usage, permissions, tools, Profile internals, canonical session writes |
 
 `CapabilityRegistry` aggregates immutable contributions and closeable resources;
@@ -73,8 +73,8 @@ project-level Memory files or repositories.
 
 Application code consumes semantic ports from `application/ports.py`. It owns
 frontend event bridging and overflow retry policy; it does not inspect Runtime
-queues or cache Core runtime objects. TUI code reaches the runtime through the
-application session.
+queues or cache Core runtime objects. CLI and desktop code reach the runtime
+through the application session.
 
 ## Deleted boundary
 
@@ -102,6 +102,6 @@ Other architecture tests cover import direction
 (`_boundaries.py` + import-linter; Kernel keeps zero Agent Runtime imports),
 composition profiles, zero-extension, capability lifecycle, session persistence,
 provider ownership, application ports, ContextLayer transientness, Semantic
-Memory lazy pinned projection, and TUI/Runtime direction. The runtime ownership
+Memory lazy pinned projection, and Runtime direction. The runtime ownership
 test also checks that Composition passes a completed ContextLayer snapshot
 without a reverse ContextManager-to-CapabilityRegistry edge.

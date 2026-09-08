@@ -1,8 +1,8 @@
 """Thinking 档位:档位词汇、归一化、循环,以及档位 -> Provider 参数映射。
 
-档位采纳 Tau 0.3.3 的 6 档词汇(``off``/``minimal``/``low``/``medium``/
-``high``/``xhigh``),与 vendored TUI、``SessionRecorder`` 的 ``thinking_level``
-字段保持一致。档位到具体 Provider 参数的映射是 Provider 知识,故置于本包:
+当前使用 6 档词汇(``off``/``minimal``/``low``/``medium``/``high``/``xhigh``)，
+与 ``SessionRecorder`` 的 ``thinking_level`` 字段保持一致。档位到具体 Provider
+参数的映射是 Provider 知识，故置于本包：
 
 - Anthropic:档位 -> ``thinking_budget_tokens``(off=None,其余 1024-16384);
 - OpenAI-compatible:档位 -> ``reasoning_effort``(off="none",其余原样透传,

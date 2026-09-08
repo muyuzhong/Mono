@@ -25,7 +25,7 @@
 | Need | Current channel |
 |---|---|
 | Show a user-facing tool or provider failure in a direct terminal run | A typed Core event rendered by `TerminalRenderer` / `ui.print_error`. |
-| Show non-streaming information or error in Textual | The instance-level `LionCodingSession` notice callback. |
+| Show non-streaming information or error in an application frontend | The instance-level `LionCodingSession` notice callback. |
 | Preserve completed conversational state for resume/replay | `SessionRecorder` -> `JsonlSessionStorage`. |
 | Assert diagnostics in tests | Subscribe/patch the event consumer or inject a fake provider; do not scrape stdout as a hidden protocol. |
 
@@ -34,9 +34,8 @@
 - Do not introduce `logging.basicConfig`, module-global loggers, or an unowned
   debug file as an incidental feature change.  There is no committed formatter,
   handler, retention rule, or log-level contract to match.
-- Do not use `print()` inside Core, provider, tool, or TUI logic as a substitute
-  for an event.  Terminal presentation is owned by the observer/`ui` boundary;
-  Textual owns its own rendering.
+- Do not use `print()` inside Core, provider, or tool logic as a substitute for
+  an event. Terminal presentation is owned by the observer/`ui` boundary.
 - Do not use JSONL sessions as a generic diagnostic log.  They are canonical
   session history and may contain user/model/tool content; only completed Core
   entries are recorded by the existing recorder.  The repository demonstrates no
@@ -45,9 +44,8 @@
   exception: `lion_code/tooling/audit.py::ExecutionAuditLog` writes the fixed
   append-only `ExecutionEvent` schema to an injectable non-session `.audit` file,
   with sensitive file-write values redacted before serialization.
-- Do not reintroduce a process-global UI sink or stdout capture to feed Textual.
-  `runtime-boundaries.md` and `tui-interaction.md` record the current
-  instance-scoped frontend ownership contract.
+- Do not reintroduce a process-global UI sink or stdout capture. Frontend
+  ownership remains instance-scoped through the application boundary.
 
 ## Representative examples
 

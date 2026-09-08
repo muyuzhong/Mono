@@ -160,7 +160,7 @@ returns exit code `2` with a JSON `blocked` status until a real backend exists.
   the evaluator side and must agree with the public hash.
 - The V2 corpus keeps the same 30-card / 10-10-10 / 18-12 contract. It retires
   cards whose referenced modules were deleted (Dream/Memory/Learning/MCP and
-  legacy TUI, PR9/PR7b) instead of mutating their v1 SHA-pinned records in
+  legacy terminal UI, PR9/PR7b) instead of mutating their v1 SHA-pinned records in
   place; rewrites surviving cards to currently existing paths when the original
   test file was renamed; and backfills four `cross_file_refactor` cards from the
   real Git history (#48/#52/#55/#57) using single-commit base/gold pairs whose

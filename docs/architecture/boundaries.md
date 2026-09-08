@@ -8,15 +8,14 @@
 
 | 源模块 (`source_package`) | 契约模式 | 允许 / 未禁止依赖 | 明确禁止依赖的模块 (`forbidden`) | 契约原因与边界保证 |
 |---|---|---|---|---|
-| `lion_code.core` | Blacklist | 除 `forbidden` 外未限制 | `providers`, `tooling`, `application`, `observers`, `tui`, `server`, `sidecar`, `permission_state`, `usage`, `session_runtime`, `capabilities`, `supervisor`, `adapters`, `runtime`, `composition` | 纯内核隔离：Kernel 是轻量级、无状态依赖的状态机与事件契约，不感知任何具体运行时实现。 |
-| `lion_code.supervisor` | Blacklist | 公开 Core 契约 (`core.events`, `core.session`) | `runtime`, `application`, `capabilities`, `composition`, `adapters`, `context`, `permission_state`, `providers`, `session_runtime`, `tooling`, `tui`, `server`, `sidecar`, `usage` | 控制平面隔离：Supervisor 作为外层调度器，只能通过 `AgentPort` 观察与控制，禁止触碰 Agent 内部私有对象。 |
-| `lion_code.composition` | Blacklist | 除 `forbidden` 外未限制 | `application`, `meta_agent`*, `supervisor`, `tui`, `server`, `sidecar` (*仅 `full_product` 允许构造 facade) | 组装根单向构建：负责将底层基础设施组装成图，不得反向依赖产品外观层或上层 UI。 |
-| `lion_code.meta_agent` | Blacklist | 除 `forbidden` 外未限制 | `application`, `supervisor`, `tui`, `server`, `sidecar` | 通用外观：只暴露无特定产品特征的通用 Agent API，不依赖具体应用层或 Supervisor。 |
-| `lion_code.providers` | Whitelist | 只允许 `core`, `providers` | 所有其他上层模块（`adapters`, `application`, `capabilities`, `composition`, `context`, `runtime`, `tooling`, `tui` 等） | 供应商适配器纯粹性：只依赖 Core 抽象定义，不感知会话历史、上下文策略或工具管线。 |
-| `lion_code.application` | Blacklist | 除 `forbidden` 外未限制 | `tui`, `server`, `sidecar` | 应用层无 UI 耦合：只负责会话管理、命令路由与端口定义，不依赖具体展示端。 |
-| `lion_code.tui` | Whitelist | 只允许 `application`, `config`, `core`, `prompt`, `tui`, `version` | 所有其他非白名单模块 | 界面层窄腰接入：终端只能经由 `application` 会话入口与 Core 事件通信，禁止直连引擎。 |
+| `lion_code.core` | Blacklist | 除 `forbidden` 外未限制 | `providers`, `tooling`, `application`, `observers`, `server`, `sidecar`, `permission_state`, `usage`, `session_runtime`, `capabilities`, `supervisor`, `adapters`, `runtime`, `composition` | 纯内核隔离：Kernel 是轻量级、无状态依赖的状态机与事件契约，不感知任何具体运行时实现。 |
+| `lion_code.supervisor` | Blacklist | 公开 Core 契约 (`core.events`, `core.session`) | `runtime`, `application`, `capabilities`, `composition`, `adapters`, `context`, `permission_state`, `providers`, `session_runtime`, `tooling`, `server`, `sidecar`, `usage` | 控制平面隔离：Supervisor 作为外层调度器，只能通过 `AgentPort` 观察与控制，禁止触碰 Agent 内部私有对象。 |
+| `lion_code.composition` | Blacklist | 除 `forbidden` 外未限制 | `application`, `meta_agent`*, `supervisor`, `server`, `sidecar` (*仅 `full_product` 允许构造 facade) | 组装根单向构建：负责将底层基础设施组装成图，不得反向依赖产品外观层或上层 UI。 |
+| `lion_code.meta_agent` | Blacklist | 除 `forbidden` 外未限制 | `application`, `supervisor`, `server`, `sidecar` | 通用外观：只暴露无特定产品特征的通用 Agent API，不依赖具体应用层或 Supervisor。 |
+| `lion_code.providers` | Whitelist | 只允许 `core`, `providers` | 所有其他上层模块（`adapters`, `application`, `capabilities`, `composition`, `context`, `runtime`, `tooling` 等） | 供应商适配器纯粹性：只依赖 Core 抽象定义，不感知会话历史、上下文策略或工具管线。 |
+| `lion_code.application` | Blacklist | 除 `forbidden` 外未限制 | `server`, `sidecar` | 应用层无 UI 耦合：只负责会话管理、命令路由与端口定义，不依赖具体展示端。 |
 | `lion_code.server` | Whitelist | 只允许 `application`, `config`, `core`, `prompt`, `server`, `version` | 所有其他非白名单模块 | 服务层窄腰接入：HTTP 服务端只能经由 `application` 会话入口与 Core 事件通信。 |
-| `lion_code.capabilities` | Blacklist | 除 `forbidden` 外未限制 | `application`, `tui`, `server`, `sidecar` | 插件自治性：业务能力实现通过 SPI 接入，不反向依赖 Agent 宿主环境或前端。 |
+| `lion_code.capabilities` | Blacklist | 除 `forbidden` 外未限制 | `application`, `server`, `sidecar` | 插件自治性：业务能力实现通过 SPI 接入，不反向依赖 Agent 宿主环境或前端。 |
 | `lion_code` (所有生产代码) | Blacklist | 生产内部模块 | `tests`, `benchmarks` | 严禁生产代码导入测试用例或基准测试套件。 |
 
 ## Runtime 内部所有权隔离边界

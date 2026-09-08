@@ -100,7 +100,6 @@ BOUNDARIES: tuple[Boundary, ...] = (
                 "tooling",
                 "application",
                 "observers",
-                "tui",
                 "server",
                 "sidecar",
                 "permission_state",
@@ -129,7 +128,6 @@ BOUNDARIES: tuple[Boundary, ...] = (
                 "providers",
                 "session_runtime",
                 "tooling",
-                "tui",
                 "server",
                 "sidecar",
                 "usage",
@@ -144,7 +142,6 @@ BOUNDARIES: tuple[Boundary, ...] = (
                 "application",
                 "meta_agent",
                 "supervisor",
-                "tui",
                 "server",
                 "sidecar",
             }
@@ -158,7 +155,6 @@ BOUNDARIES: tuple[Boundary, ...] = (
             {
                 "application",
                 "supervisor",
-                "tui",
                 "server",
                 "sidecar",
             }
@@ -168,26 +164,6 @@ BOUNDARIES: tuple[Boundary, ...] = (
         contract_name="Providers 只依赖 Core 抽象",
         source_package="lion_code.providers",
         allowed=frozenset({"core", "providers"}),
-    ),
-    Boundary(
-        contract_name="Application 不依赖 TUI",
-        source_package="lion_code.application",
-        forbidden=frozenset({"tui", "server", "sidecar"}),
-    ),
-    Boundary(
-        contract_name="TUI 只经 Application/Core 接触运行时",
-        source_package="lion_code.tui",
-        allowed=frozenset(
-            {
-                "application",
-                "config",
-                "core",
-                "prompt",
-                "tui",
-                "version",
-            }
-        ),
-        allow_indirect=True,
     ),
     Boundary(
         contract_name="Server 只经 Application/Core 接触运行时",
@@ -205,12 +181,11 @@ BOUNDARIES: tuple[Boundary, ...] = (
         allow_indirect=True,
     ),
     Boundary(
-        contract_name="Capabilities 不依赖 Agent 宿主与 Application/TUI",
+        contract_name="Capabilities 不依赖 Agent 宿主与 Application",
         source_package="lion_code.capabilities",
         forbidden=frozenset(
             {
                 "application",
-                "tui",
                 "server",
                 "sidecar",
             }

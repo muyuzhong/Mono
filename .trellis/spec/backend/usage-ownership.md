@@ -8,7 +8,7 @@ Agent session. It is executable architecture, not a migration plan.
 Apply this guide whenever a change reads, records, resets, displays, or limits
 model, child-agent, Skill, response, turn, prompt-window, or cost usage.
 It covers `usage.py`, Core event adapters, the Composition Root,
-`AgentRuntime`, session lifecycle, Application, TUI, and all child
+`AgentRuntime`, session lifecycle, Application, and all child
 execution paths. `Supervisor` is deliberately outside this ownership graph and
 must not create, mirror, read or persist usage/budget state.
 
@@ -63,8 +63,8 @@ class UsageLedger:
 
 The general public read boundary is `MetaAgent.usage -> UsageSnapshot`; the
 internal Full product host also supplies `Agent.token_usage()` to
-`LionCodingSession.token_usage()`. TUI and other frontend
-consumers read named snapshot fields; they never receive the Ledger or an
+`LionCodingSession.token_usage()`. Frontend consumers read named snapshot
+fields; they never receive the Ledger or an
 untyped usage dictionary.
 
 `MetaAgent.run()` returns an `AgentRunResult` whose `turns`, input, output, cache
@@ -144,9 +144,9 @@ Core emits canonical usage in Assistant messages but must not import
 `lion_code.usage` or observers. Providers construct Core `Usage` data and must
 not import runtime ownership modules. Observers may depend on Core events and
 Usage. Runtime may depend on Usage; Supervisor must not depend on Usage.
-Application imports
-`UsageSnapshot` only for its typed projection, and TUI reads that projection
-through Application rather than importing the Ledger.
+Application imports `UsageSnapshot` only for its typed projection, and
+frontends read that projection through Application rather than importing the
+Ledger.
 
 ## 4. Validation and Error Matrix
 
@@ -162,7 +162,7 @@ through Application rather than importing the Ledger.
 | Session clear / restore | Reset every Ledger field | Preserve stale totals or replace the Ledger object |
 | Terminal toggle | Preserve observer and Ledger identity | Rebuild UsageObserver while switching renderer |
 | Full observer rebuild | New adapter, same Ledger | New Ledger or copied totals |
-| Application / TUI | Frozen typed snapshot | Mutable Ledger or ad-hoc dict crosses the boundary |
+| Application / frontends | Frozen typed snapshot | Mutable Ledger or ad-hoc dict crosses the boundary |
 | Core / Provider imports | Core data only | Reverse import into Usage or observers |
 
 Commands currently accept the numeric values emitted by trusted Provider and
@@ -259,8 +259,8 @@ Wrong: call `reset()` after compaction or Plan clear-and-execute. Correct: call
 Wrong: rebuild UsageObserver when terminal display changes. Correct: subscribe
 or unsubscribe only the terminal renderer and preserve observer identity.
 
-Wrong: hand a Ledger or dictionary to TUI. Correct: Application returns
-`UsageSnapshot`, and TUI renders its named fields.
+Wrong: hand a Ledger or dictionary to a frontend. Correct: Application returns
+`UsageSnapshot`, and the frontend renders its named fields.
 
 Wrong: hide a second constructor or Ledger write behind an alias or dynamic
 setter. Correct: construct only in the Composition Root and mutate only through
