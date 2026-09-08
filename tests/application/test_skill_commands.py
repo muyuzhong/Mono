@@ -44,7 +44,9 @@ class _FakeSession:
     system_prompt = ""
     session_id: str | None = None
 
-    def set_model(self, model: str) -> None: ...
+    def set_model(self, model: str) -> None:
+        self.model = model
+
     def set_thinking_level(self, level: str) -> str:
         return level
 
@@ -113,6 +115,36 @@ class TestSkillFallback(unittest.TestCase):
         result = handle_command(_FakeSession(), "/skills")
         self.assertTrue(result.handled)
         self.assertTrue(result.skills_list_requested)
+
+    def test_fixed_commands_dispatch_without_registry(self) -> None:
+        session = _FakeSession()
+
+        result = handle_command(session, "/model test-model")
+        self.assertEqual(result.message, "Model set: test-model")
+        self.assertEqual(session.model, "test-model")
+
+        result = handle_command(session, "/model")
+        self.assertEqual(result.message, "Usage: /model <name>")
+
+        result = handle_command(session, "/thinking high")
+        self.assertEqual(result.message, "Thinking: high")
+
+        result = handle_command(session, "/thinking")
+        self.assertEqual(result.message, "Thinking: off")
+
+        result = handle_command(session, "/compact keep this")
+        self.assertEqual(result.compact_summary, "keep this")
+
+        result = handle_command(session, "/resume session-1")
+        self.assertEqual(result.resume_session_id, "session-1")
+
+        result = handle_command(session, "/resume")
+        self.assertIn("不支持 /resume", result.message)
+
+    def test_non_command_input_remains_unhandled(self) -> None:
+        for text in ("ordinary prompt", "/"):
+            with self.subTest(text=text):
+                self.assertFalse(handle_command(_FakeSession(), text).handled)
 
 
 if __name__ == "__main__":
