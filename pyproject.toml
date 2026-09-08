@@ -11,9 +11,6 @@ license = "MIT"
 dependencies = [
     "pydantic>=2.11",
     "rich>=13.0.0",
-    "textual>=8.2.8",
-    "pygments>=2.18",
-    "anyio>=4.0",
     "httpx[socks]>=0.27",
     "fastapi>=0.110.0",
     "uvicorn>=0.28.0",
@@ -135,7 +132,6 @@ forbidden_modules = [
     "lion_code.session_runtime",
     "lion_code.supervisor",
     "lion_code.tooling",
-    "lion_code.tui",
     "lion_code.usage",
 ]
 ignore_imports = []
@@ -158,7 +154,6 @@ forbidden_modules = [
     "lion_code.sidecar",
     "lion_code.session_runtime",
     "lion_code.tooling",
-    "lion_code.tui",
     "lion_code.usage",
 ]
 ignore_imports = []
@@ -174,7 +169,6 @@ forbidden_modules = [
     "lion_code.server",
     "lion_code.sidecar",
     "lion_code.supervisor",
-    "lion_code.tui",
 ]
 ignore_imports = ["lion_code.composition.full_product -> lion_code.meta_agent"]
 allow_indirect_imports = "True"
@@ -188,7 +182,6 @@ forbidden_modules = [
     "lion_code.server",
     "lion_code.sidecar",
     "lion_code.supervisor",
-    "lion_code.tui",
 ]
 ignore_imports = []
 allow_indirect_imports = "False"
@@ -218,55 +211,12 @@ forbidden_modules = [
     "lion_code.supervisor",
     "lion_code.tooling",
     "lion_code.tools",
-    "lion_code.tui",
     "lion_code.ui",
     "lion_code.usage",
     "lion_code.version",
 ]
 ignore_imports = []
 allow_indirect_imports = "False"
-
-[[tool.importlinter.contracts]]
-name = "Application 不依赖 TUI"
-type = "forbidden"
-source_modules = ["lion_code.application"]
-forbidden_modules = [
-    "lion_code.server",
-    "lion_code.sidecar",
-    "lion_code.tui",
-]
-ignore_imports = []
-allow_indirect_imports = "False"
-
-[[tool.importlinter.contracts]]
-name = "TUI 只经 Application/Core 接触运行时"
-type = "forbidden"
-source_modules = ["lion_code.tui"]
-forbidden_modules = [
-    "lion_code.adapters",
-    "lion_code.capabilities",
-    "lion_code.composition",
-    "lion_code.context",
-    "lion_code.frontmatter",
-    "lion_code.hooks",
-    "lion_code.meta_agent",
-    "lion_code.observers",
-    "lion_code.permission_state",
-    "lion_code.project_identity",
-    "lion_code.providers",
-    "lion_code.runtime",
-    "lion_code.server",
-    "lion_code.sidecar",
-    "lion_code.session_runtime",
-    "lion_code.supervisor",
-    "lion_code.tooling",
-    "lion_code.tools",
-    "lion_code.ui",
-    "lion_code.usage",
-]
-ignore_imports = []
-# TUI 通过 application.session 间接使用 Agent；只阻止新增的直接引擎 import。
-allow_indirect_imports = "True"
 
 [[tool.importlinter.contracts]]
 name = "Server 只经 Application/Core 接触运行时"
@@ -290,7 +240,6 @@ forbidden_modules = [
     "lion_code.supervisor",
     "lion_code.tooling",
     "lion_code.tools",
-    "lion_code.tui",
     "lion_code.ui",
     "lion_code.usage",
 ]
@@ -298,14 +247,13 @@ ignore_imports = []
 allow_indirect_imports = "True"
 
 [[tool.importlinter.contracts]]
-name = "Capabilities 不依赖 Agent 宿主与 Application/TUI"
+name = "Capabilities 不依赖 Agent 宿主与 Application"
 type = "forbidden"
 source_modules = ["lion_code.capabilities"]
 forbidden_modules = [
     "lion_code.application",
     "lion_code.server",
     "lion_code.sidecar",
-    "lion_code.tui",
 ]
 ignore_imports = []
 allow_indirect_imports = "False"

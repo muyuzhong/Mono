@@ -103,7 +103,7 @@ def test_config_bindings_and_profiles_are_separate_frozen_values() -> None:
 async def test_example_capability_needs_only_spec_registration_and_tests(
     tmp_path, monkeypatch
 ):
-    """新 Capability 不需要修改 Agent、Runtime、Application 或 TUI。"""
+    """新 Capability 不需要修改 Agent、Runtime 或 Application。"""
 
     monkeypatch.chdir(tmp_path)
     participant = ExampleSessionParticipant()

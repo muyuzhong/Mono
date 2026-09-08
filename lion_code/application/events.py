@@ -2,8 +2,7 @@
 
 Core 的 ``AgentEvent`` 只描述单次 Agent 循环;应用层在其上补充「会话级」
 语义:一轮彻底归位(Settled)、队列变化、压缩、自动重试、会话/供应商切换。
-事件集对齐 Tau 0.3.3 中实际被 emit 的集合(见 docs/tui-migration-audit.md §9),
-并做 Lion 增补。
+事件集覆盖应用层前端需要的会话事件，并做 Lion 增补。
 
 关键契约:
 

@@ -75,17 +75,6 @@ layers:
 | tests/integration/test_meta_agent.py | mixed | kernel+harness：zero-extension MetaAgent、Event Stream、Session 与显式 Coding Tool composition |
 | tests/integration/test_provider_core_tool_runtime.py | mixed | kernel+harness：真实 OpenAICompatibleProvider + httpx.MockTransport |
 
-### tests/tui/
-
-| 测试文件/目录 | Layer | 备注 |
-|---|---|---|
-| tests/tui/test_tui_adapter.py | harness | 事件→UI 适配 |
-| tests/tui/test_tui_app.py | product | 完整 Textual 应用 + 真实 Agent（product integration） |
-| tests/tui/test_tui_autocomplete.py | harness | TUI 组件 |
-| tests/tui/test_tui_config.py | harness | TUI 组件 |
-| tests/tui/test_tui_file_drop.py | harness | TUI 组件 |
-| tests/tui/test_tui_themes.py | harness | TUI 组件 |
-
 ## 顶层测试文件
 
 | 测试文件/目录 | Layer | 备注 |
@@ -131,13 +120,12 @@ layers:
   test_agent_run.py（为主）。
 - **Harness**：tests/adapters/、tests/session_runtime/、tests/runtime/
   （renderer+usage observer）、tests/tooling/（大部）、tests/application/（facade）、
-  test_hooks.py、test_provider_manager.py、test_project_identity.py、test_prompt.py、
-  tests/tui/（大部）。
+  test_hooks.py、test_provider_manager.py、test_project_identity.py、test_prompt.py。
 - **Capability**：tests/capabilities/、test_plan_runtime.py、
   application/test_skill_commands.py、
   tests/tooling/（skill/subagent/plan-tools 文件）。
 - **Supervisor**：test_supervisor.py、application/test_coding_session_ports.py 的
   overflow-retry 部分。
-- **Product integration**：tests/tui/test_tui_app.py、tests/integration/（Mixed）。
+- **Product integration**：tests/integration/（Mixed）。
 - **Eval/CI infra（层外）**：tests/architecture/、tests/benchmarks/、
   test_context_formal_benchmark.py、test_quality_baseline.py。

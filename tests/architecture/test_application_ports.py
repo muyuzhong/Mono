@@ -103,11 +103,6 @@ def test_runtime_implementation_does_not_import_application() -> None:
     assert not violations, violations
 
 
-def test_tui_does_not_import_runtime_engine() -> None:
-    violations = _forbidden_root_imports(_source_files("tui"), {"agent", "runtime"})
-    assert not violations, violations
-
-
 def test_fake_backend_is_a_real_application_injection() -> None:
     fake_path = REPOSITORY_ROOT / "tests" / "application" / "fakes.py"
     fake_source = fake_path.read_text(encoding="utf-8")
