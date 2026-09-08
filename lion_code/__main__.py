@@ -198,7 +198,7 @@ async def run_repl(backend: CodingSessionBackendAdapter) -> None:
 
     sigint_count = 0
 
-    def handle_sigint(sig, frame):
+    def handle_sigint(_sig, _frame):
         nonlocal sigint_count
         # `is_processing` 才表示主 Agent 是否有活动任务；`_output_buffer` 只服务于
         # 子 Agent，不能用它判断主 Agent 是否可中断。

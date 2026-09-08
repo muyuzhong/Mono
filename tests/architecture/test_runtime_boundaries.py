@@ -1032,7 +1032,9 @@ def test_capabilities_do_not_import_agent_host_or_frontend() -> None:
         forbidden=_CAPABILITIES.forbidden_roots,
     )
 
-    assert not violations, f"Capability SPI must not depend on Agent host / Application: {violations}"
+    assert not violations, (
+        f"Capability SPI must not depend on Agent host / Application: {violations}"
+    )
 
 
 _CAPABILITY_ANTIPATTERN_SYMBOLS = frozenset(

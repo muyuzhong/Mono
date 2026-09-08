@@ -263,7 +263,11 @@ async def test_repl_dispatch_exit_returns_true() -> None:
         (_result(skill_prompt="use the skill"), ["chat:use the skill"], ""),
         (_result(message="Usage: /model <name>"), [], "Usage: /model"),
         (_result(resume_session_id="abc"), [], "不支持 /resume"),
-        (_result(message="REPL 不支持 /resume；请用 --resume 启动"), [], "不支持 /resume"),
+        (
+            _result(message="REPL 不支持 /resume；请用 --resume 启动"),
+            [],
+            "不支持 /resume",
+        ),
         (_result(message="hello notice"), [], "hello notice"),
     ],
 )

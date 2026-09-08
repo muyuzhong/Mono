@@ -17,7 +17,9 @@ console = Console(highlight=False)
 # 抛 UnicodeEncodeError。保留控制台编码（中文仍正常显示），仅把无法编码的字符
 # 替换为 ?，避免 spinner 与流式文本崩溃。
 try:
-    sys.stdout.reconfigure(errors="replace")
+    reconfigure = getattr(sys.stdout, "reconfigure", None)
+    if reconfigure is not None:
+        reconfigure(errors="replace")
 except (AttributeError, ValueError):
     pass
 
@@ -55,7 +57,7 @@ def print_tool_result(name: str, result: str) -> None:
     truncated = result
     if len(result) > max_len:
         truncated = result[:max_len] + f"\n  ... ({len(result)} chars total)"
-    lines = "\n".join("  " + l for l in truncated.split("\n"))
+    lines = "\n".join("  " + line for line in truncated.split("\n"))
     console.print(f"[dim]{lines}[/dim]")
 
 
